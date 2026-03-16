@@ -1,39 +1,50 @@
 # DR BASAFFAR Clinic Management System
 
 ## Overview
-A comprehensive medical management system for Dr. Basaffar's clinic. Includes an admin dashboard (web) and a backend REST API, with a React Native mobile app (Expo Snack) for patients.
+A comprehensive medical management system for Dr. Basaffar's clinic. Includes an admin dashboard (web), a backend REST API, and a mobile app running as a web app via Vite + React Native Web.
 
 ## Project Structure
 ```
 BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/
 ├── backend/
-│   ├── server.js       # Express API + static file server
+│   ├── server.js       # Express API + dashboard static server (port 3000)
 │   ├── package.json    # Dependencies: express, cors
 │   └── db.json         # Auto-generated JSON database (persistent)
 ├── dashboard/
 │   └── alshakreen-dashboard.html  # Admin dashboard (single-file HTML/JS/CSS)
 └── mobile-app/
-    └── alshakreen-snack.js        # React Native app (Expo Snack format)
+    └── alshakreen-snack.js        # Original React Native app (Expo Snack format)
+
+mobile-app/                        # Vite + React Native Web project (port 5000)
+├── index.html                     # HTML entry point
+├── package.json                   # Dependencies: react, react-dom, react-native-web, vite
+├── vite.config.js                 # Vite config with RN-Web alias + API proxy to port 3000
+└── src/
+    ├── main.jsx                   # Entry point (AppRegistry)
+    ├── App.jsx                    # Full mobile app (converted from alshakreen-snack.js)
+    └── LinearGradient.jsx         # CSS-based LinearGradient web component
 ```
 
 ## Tech Stack
-- **Backend**: Node.js + Express.js (serves both API and dashboard)
+- **Backend**: Node.js + Express.js (serves API + dashboard)
 - **Database**: JSON file (`db.json`) — auto-created on first run
-- **Frontend**: Vanilla JS/HTML/CSS dashboard (Arabic RTL UI)
-- **Mobile**: React Native via Expo (separate, not hosted here)
+- **Dashboard**: Vanilla JS/HTML/CSS (Arabic RTL UI) served by Express
+- **Mobile App (Web)**: React + React Native Web + Vite (renders mobile app in browser)
+- **LinearGradient**: Custom CSS gradient component (replaces expo-linear-gradient for web)
 
 ## Running the Application
-- **Workflow**: "Start application" — runs `node BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js`
-- **Port**: 5000 (both API and dashboard served from the same server)
-- **Dashboard**: served at `/`
-- **API**: served at `/api/*`
+- **"Start Backend"** workflow: `node BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js` (port 3000, console)
+- **"Start application"** workflow: Vite dev server in `mobile-app/` (port 5000, webview)
+- Vite proxies `/api/*` requests to the backend on port 3000
+- Dashboard accessible at `http://localhost:3000/`
 
-## Key Changes from Original
-- Port changed from 3000 → 5000 (Replit webview requirement)
-- Dashboard API URL changed from `http://localhost:3000/api` → `/api` (relative, works via proxy)
-- Backend now serves the dashboard as static files via `express.static`
-- Root route `/` serves `alshakreen-dashboard.html`
-- Server binds to `0.0.0.0` (required for Replit proxy)
+## Key Architecture
+- Backend on port 3000 serves API + admin dashboard
+- Mobile app on port 5000 (Vite) is the user-facing webview
+- API calls from mobile app use relative `/api` paths, proxied by Vite to backend
+- All `Alert.alert()` calls replaced with `webAlert()` (uses `window.confirm`/`window.alert` on web)
+- `useNativeDriver: false` for all animations (required for web)
+- `LinearGradient` is a custom component using CSS `linear-gradient`
 
 ## API Endpoints
 - `GET /api/ping` — health check
@@ -47,7 +58,3 @@ BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/
 - `GET/POST /api/notifications` — push notifications
 - `GET/PUT /api/settings` — app settings
 - `POST /api/auth/login` / `POST /api/auth/register` — auth
-
-## Deployment
-- Target: autoscale
-- Run: `node BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js`
