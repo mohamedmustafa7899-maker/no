@@ -46,6 +46,27 @@ mobile-app/                        # Vite + React Native Web project (port 5000)
 - `useNativeDriver: false` for all animations (required for web)
 - `LinearGradient` is a custom component using CSS `linear-gradient`
 
+## Mobile App Screens
+- **Home** — banners, departments, offers, doctors
+- **Offers** — full offer listing
+- **Cart** — shopping cart
+- **Booking** — appointment booking form
+- **More Menu** — links to all sub-screens below:
+  - البيانات الشخصية (Profile)
+  - حجوزاتي (MyBookingsScreen) — fetches from `/api/bookings`
+  - رصيدي (BalanceScreen) — static balance/loyalty points
+  - فواتيري (InvoicesScreen) — fetches confirmed bookings from `/api/bookings`
+  - فروعنا (BranchesScreen) — shows branch details
+  - خدماتنا (ServicesScreen) — fetches departments from `/api/depts`
+  - الإشعارات (NotificationsScreen) — fetches from `/api/notifications`
+  - إرشادات الاستخدام (UsageGuideScreen) — FAQ accordion
+  - معلومات عنّا (AboutScreen) — fetches from `/api/settings`
+  - تواصل معنا (ContactScreen) — fetches from `/api/settings`
+  - سياسة الخصوصية (PrivacyScreen) — static privacy policy
+- **Login/Register** — auth screens
+- **Doctor Detail** — individual doctor info
+- **Offer Detail** — individual offer with booking
+
 ## API Endpoints
 - `GET /api/ping` — health check
 - `GET/POST/PUT/DELETE /api/depts` — departments

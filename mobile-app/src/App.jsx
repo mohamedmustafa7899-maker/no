@@ -146,6 +146,15 @@ export default function App() {
   if (screen==='register') return <RegisterScreen onBack={()=>go('login')} onDone={(n)=>{setLoggedIn(true);setUserName(n);go('tabs');}} />;
   if (screen==='branches') return <BranchesScreen onBack={()=>go('tabs')} branches={apiBranches} />;
   if (screen==='profile') return <ProfileScreen onBack={()=>go('tabs')} userName={userName} />;
+  if (screen==='myBookings') return <MyBookingsScreen onBack={()=>go('tabs')} loggedIn={loggedIn} onLogin={()=>go('login')} />;
+  if (screen==='balance') return <BalanceScreen onBack={()=>go('tabs')} />;
+  if (screen==='invoices') return <InvoicesScreen onBack={()=>go('tabs')} loggedIn={loggedIn} onLogin={()=>go('login')} />;
+  if (screen==='services') return <ServicesScreen onBack={()=>go('tabs')} depts={apiDepts} />;
+  if (screen==='notifications') return <NotificationsScreen onBack={()=>go('tabs')} />;
+  if (screen==='guide') return <UsageGuideScreen onBack={()=>go('tabs')} />;
+  if (screen==='about') return <AboutScreen onBack={()=>go('tabs')} />;
+  if (screen==='contact') return <ContactScreen onBack={()=>go('tabs')} />;
+  if (screen==='privacy') return <PrivacyScreen onBack={()=>go('tabs')} />;
 
   return (
     <View style={{flex:1,backgroundColor:C.bg}}>
@@ -154,7 +163,7 @@ export default function App() {
       {tab==='offers'  && <OffersScreen  onOffer={o=>go('offerDetail',o)} offers={apiOffers} />}
       {tab==='cart'    && <CartScreen    cart={cart} remove={removeFromCart} loggedIn={loggedIn} onLogin={()=>go('login')} clear={clearCart} />}
       {tab==='booking' && <BookingScreen loggedIn={loggedIn} onLogin={()=>go('login')} branches={apiBranches} />}
-      {tab==='more'    && <MoreScreen    loggedIn={loggedIn} userName={userName} onLogin={()=>go('login')} onBranches={()=>go('branches')} onProfile={()=>go('profile')} onLogout={()=>{setLoggedIn(false);setUserName('');}} />}
+      {tab==='more'    && <MoreScreen    loggedIn={loggedIn} userName={userName} onLogin={()=>go('login')} onBranches={()=>go('branches')} onProfile={()=>go('profile')} onLogout={()=>{setLoggedIn(false);setUserName('');}} onBookings={()=>go('myBookings')} onBalance={()=>go('balance')} onInvoices={()=>go('invoices')} onServices={()=>go('services')} onNotifications={()=>go('notifications')} onGuide={()=>go('guide')} onAbout={()=>go('about')} onContact={()=>go('contact')} onPrivacy={()=>go('privacy')} />}
       <BottomNav tab={tab} setTab={setTab} badge={cart.length} />
     </View>
   );
@@ -604,20 +613,20 @@ const B=StyleSheet.create({
   optT:{flex:1,fontSize:12,color:C.txtM,textAlign:'right'},
 });
 
-function MoreScreen({loggedIn,userName,onLogin,onBranches,onProfile,onLogout}){
+function MoreScreen({loggedIn,userName,onLogin,onBranches,onProfile,onLogout,onBookings,onBalance,onInvoices,onServices,onNotifications,onGuide,onAbout,onContact,onPrivacy}){
   const [lang,setLang]=useState('ar');
   const rows=[
     {i:'👤',l:'البيانات الشخصية',s:'تعديل معلوماتك',p:onProfile},
-    {i:'📋',l:'حجوزاتي',s:'عرض المواعيد',b:'2'},
-    {i:'💰',l:'رصيدي',s:'0 ريال'},
-    {i:'🧾',l:'فواتيري'},
+    {i:'📋',l:'حجوزاتي',s:'عرض المواعيد',p:onBookings},
+    {i:'💰',l:'رصيدي',s:'0 ريال',p:onBalance},
+    {i:'🧾',l:'فواتيري',p:onInvoices},
     {i:'📍',l:'فروعنا',s:'3 فروع',p:onBranches},
-    {i:'⚕️',l:'خدماتنا'},
-    {i:'🔔',l:'الإشعارات',b:'3'},
-    {i:'📖',l:'إرشادات الاستخدام'},
-    {i:'ℹ️',l:'معلومات عنّا'},
-    {i:'💬',l:'تواصل معنا'},
-    {i:'🔒',l:'سياسة الخصوصية'},
+    {i:'⚕️',l:'خدماتنا',p:onServices},
+    {i:'🔔',l:'الإشعارات',p:onNotifications},
+    {i:'📖',l:'إرشادات الاستخدام',p:onGuide},
+    {i:'ℹ️',l:'معلومات عنّا',p:onAbout},
+    {i:'💬',l:'تواصل معنا',p:onContact},
+    {i:'🔒',l:'سياسة الخصوصية',p:onPrivacy},
   ];
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
@@ -871,6 +880,381 @@ function ProfileScreen({onBack,userName}){
           </LinearGradient>
         </TouchableOpacity>
         <View style={{height:30}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function MyBookingsScreen({onBack,loggedIn,onLogin}){
+  const [bookings,setBookings]=useState([]);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    (async()=>{
+      const data=await apiFetch('/bookings');
+      if(data) setBookings(Array.isArray(data)?data:data.bookings||[]);
+      setLoading(false);
+    })();
+  },[]);
+  const statusMap={pending:{l:'معلق',c:C.txtL,bg:C.bgD},confirmed:{l:'مؤكد',c:C.grn,bg:C.grnL},cancelled:{l:'ملغي',c:C.red,bg:C.redL}};
+  if(!loggedIn) return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="حجوزاتي" onBack={onBack}/>
+      <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:30}}>
+        <Text style={{fontSize:40,marginBottom:16}}>🔒</Text>
+        <Text style={{fontSize:15,fontWeight:'700',color:C.navy,marginBottom:8}}>سجّل دخولك أولاً</Text>
+        <Text style={{fontSize:12,color:C.txtL,marginBottom:20,textAlign:'center'}}>يرجى تسجيل الدخول لعرض حجوزاتك</Text>
+        <TouchableOpacity onPress={onLogin}><LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:12,paddingHorizontal:28,paddingVertical:12}}><Text style={{fontSize:13,fontWeight:'700',color:'white'}}>تسجيل الدخول</Text></LinearGradient></TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="حجوزاتي 📋" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        {loading?<Text style={{textAlign:'center',color:C.txtL,marginTop:40}}>جاري التحميل...</Text>
+        :bookings.length===0?
+          <View style={{alignItems:'center',marginTop:60}}>
+            <Text style={{fontSize:50,marginBottom:16}}>📋</Text>
+            <Text style={{fontSize:15,fontWeight:'700',color:C.navy,marginBottom:6}}>لا توجد حجوزات</Text>
+            <Text style={{fontSize:12,color:C.txtL}}>لم تقم بأي حجز بعد</Text>
+          </View>
+        :bookings.map((b,i)=>{
+          const st=statusMap[b.status]||statusMap.pending;
+          return(
+            <View key={b.id||i} style={{backgroundColor:C.white,borderRadius:14,marginBottom:12,padding:14,borderWidth:1,borderColor:C.bgD}}>
+              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                <View style={{backgroundColor:st.bg,borderRadius:8,paddingHorizontal:10,paddingVertical:3}}>
+                  <Text style={{fontSize:10,fontWeight:'700',color:st.c}}>{st.l}</Text>
+                </View>
+                <Text style={{fontSize:13,fontWeight:'700',color:C.navy}}>{b.offer||b.name||'حجز'}</Text>
+              </View>
+              {b.code&&<Text style={{fontSize:11,color:C.txtL,textAlign:'right',marginBottom:4}}>رقم الحجز: {b.code}</Text>}
+              {b.branch&&<Text style={{fontSize:11,color:C.txtM,textAlign:'right',marginBottom:4}}>📍 {b.branch}</Text>}
+              {b.phone&&<Text style={{fontSize:11,color:C.txtL,textAlign:'right',marginBottom:4}}>📞 {b.phone}</Text>}
+              {b.date&&<Text style={{fontSize:10,color:C.txtL,textAlign:'right'}}>📅 {new Date(b.date).toLocaleDateString('ar-SA')}</Text>}
+            </View>
+          );
+        })}
+        <View style={{height:20}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function BalanceScreen({onBack}){
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="رصيدي 💰" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:20,alignItems:'center'}}>
+        <LinearGradient colors={[C.navy,C.navyM]} style={{width:'100%',borderRadius:20,padding:24,alignItems:'center',marginBottom:24}}>
+          <Text style={{fontSize:12,color:'rgba(255,255,255,0.5)',marginBottom:8}}>رصيدك الحالي</Text>
+          <Text style={{fontSize:40,fontWeight:'900',color:'white',marginBottom:4}}>0 <Text style={{fontSize:18}}>﷼</Text></Text>
+          <Text style={{fontSize:11,color:C.blue,fontWeight:'600'}}>لا يوجد رصيد حالياً</Text>
+        </LinearGradient>
+        <View style={{backgroundColor:C.white,borderRadius:16,padding:18,width:'100%',marginBottom:16,borderWidth:1,borderColor:C.bgD}}>
+          <Text style={{fontSize:13,fontWeight:'700',color:C.navy,marginBottom:12,textAlign:'right'}}>نقاط الولاء ⭐</Text>
+          <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+            <Text style={{fontSize:11,color:C.txtL}}>المستوى: برونزي</Text>
+            <Text style={{fontSize:22,fontWeight:'900',color:C.blue}}>0</Text>
+          </View>
+          <View style={{height:6,backgroundColor:C.bgD,borderRadius:3,marginTop:12}}>
+            <View style={{height:6,backgroundColor:C.blue,borderRadius:3,width:'0%'}}/>
+          </View>
+          <Text style={{fontSize:10,color:C.txtL,marginTop:6,textAlign:'right'}}>اجمع 100 نقطة للترقية إلى المستوى الفضي</Text>
+        </View>
+        <TouchableOpacity activeOpacity={0.85} style={{width:'100%'}} onPress={()=>webAlert('قريباً','خدمة شحن الرصيد ستكون متاحة قريباً')}>
+          <LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center'}}>
+            <Text style={{fontSize:14,fontWeight:'700',color:'white'}}>💳 اشحن رصيدك</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function InvoicesScreen({onBack,loggedIn,onLogin}){
+  const [invoices,setInvoices]=useState([]);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    (async()=>{
+      const data=await apiFetch('/bookings');
+      if(data){
+        const all=Array.isArray(data)?data:data.bookings||[];
+        setInvoices(all.filter(b=>b.status==='confirmed'));
+      }
+      setLoading(false);
+    })();
+  },[]);
+  if(!loggedIn) return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="فواتيري" onBack={onBack}/>
+      <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:30}}>
+        <Text style={{fontSize:40,marginBottom:16}}>🔒</Text>
+        <Text style={{fontSize:15,fontWeight:'700',color:C.navy,marginBottom:8}}>سجّل دخولك أولاً</Text>
+        <Text style={{fontSize:12,color:C.txtL,marginBottom:20,textAlign:'center'}}>يرجى تسجيل الدخول لعرض فواتيرك</Text>
+        <TouchableOpacity onPress={onLogin}><LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:12,paddingHorizontal:28,paddingVertical:12}}><Text style={{fontSize:13,fontWeight:'700',color:'white'}}>تسجيل الدخول</Text></LinearGradient></TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="فواتيري 🧾" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        {loading?<Text style={{textAlign:'center',color:C.txtL,marginTop:40}}>جاري التحميل...</Text>
+        :invoices.length===0?
+          <View style={{alignItems:'center',marginTop:60}}>
+            <Text style={{fontSize:50,marginBottom:16}}>🧾</Text>
+            <Text style={{fontSize:15,fontWeight:'700',color:C.navy,marginBottom:6}}>لا توجد فواتير</Text>
+            <Text style={{fontSize:12,color:C.txtL}}>لم يتم إصدار أي فاتورة بعد</Text>
+          </View>
+        :invoices.map((inv,i)=>(
+          <View key={inv.id||i} style={{backgroundColor:C.white,borderRadius:14,marginBottom:12,padding:14,borderWidth:1,borderColor:C.bgD}}>
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+              <View style={{backgroundColor:C.grnL,borderRadius:8,paddingHorizontal:10,paddingVertical:3}}>
+                <Text style={{fontSize:10,fontWeight:'700',color:C.grn}}>مدفوعة</Text>
+              </View>
+              <Text style={{fontSize:13,fontWeight:'700',color:C.navy}}>{inv.offer||inv.name||'خدمة'}</Text>
+            </View>
+            {inv.code&&<Text style={{fontSize:11,color:C.txtL,textAlign:'right',marginBottom:4}}>رقم الفاتورة: {inv.code}</Text>}
+            {inv.branch&&<Text style={{fontSize:11,color:C.txtM,textAlign:'right',marginBottom:4}}>📍 {inv.branch}</Text>}
+            {inv.price&&<Text style={{fontSize:16,fontWeight:'900',color:C.blueD,textAlign:'right'}}>{Number(inv.price).toLocaleString()} ﷼</Text>}
+            {inv.date&&<Text style={{fontSize:10,color:C.txtL,textAlign:'right',marginTop:4}}>📅 {new Date(inv.date).toLocaleDateString('ar-SA')}</Text>}
+          </View>
+        ))}
+        <View style={{height:20}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function ServicesScreen({onBack,depts}){
+  const services=depts||DEPTS;
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="خدماتنا ⚕️" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        {services.filter(d=>d.dept!=='branches').map((d,i)=>(
+          <View key={d.id||i} style={{backgroundColor:C.white,borderRadius:16,marginBottom:14,overflow:'hidden',borderWidth:1,borderColor:C.bgD}}>
+            <LinearGradient colors={d.color||[C.navy,C.navyM]} style={{height:90,alignItems:'center',justifyContent:'center'}}>
+              <Text style={{fontSize:36}}>{d.dept==='أسنان'?'🦷':d.dept==='جلدية'?'✨':d.dept==='عيون'?'👁️':d.dept==='تجميل'?'💄':'⚕️'}</Text>
+            </LinearGradient>
+            <View style={{padding:14}}>
+              <Text style={{fontSize:15,fontWeight:'700',color:C.navy,textAlign:'right',marginBottom:6}}>{d.label}</Text>
+              <Text style={{fontSize:12,color:C.txtM,textAlign:'right',lineHeight:20}}>
+                {d.dept==='أسنان'?'زراعة الأسنان، تركيبات الزيركون والبورسلين، تبييض بالليزر، علاج العصب والجذور'
+                :d.dept==='جلدية'?'إزالة الشعر بالليزر، تقشير البشرة، علاج حب الشباب، تجديد البشرة'
+                :d.dept==='عيون'?'تصحيح النظر بالليزر، علاج الماء الأبيض، فحص قاع العين'
+                :d.dept==='تجميل'?'حقن البوتوكس والفيلر، نحت الوجه، تجميل الأنف غير الجراحي'
+                :'خدمات طبية متخصصة بأحدث التقنيات'}
+              </Text>
+            </View>
+          </View>
+        ))}
+        <View style={{height:20}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function NotificationsScreen({onBack}){
+  const [notifs,setNotifs]=useState([]);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    (async()=>{
+      const data=await apiFetch('/notifications');
+      if(data) setNotifs(Array.isArray(data)?data:data.notifications||[]);
+      setLoading(false);
+    })();
+  },[]);
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="الإشعارات 🔔" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        {loading?<Text style={{textAlign:'center',color:C.txtL,marginTop:40}}>جاري التحميل...</Text>
+        :notifs.length===0?
+          <View style={{alignItems:'center',marginTop:60}}>
+            <Text style={{fontSize:50,marginBottom:16}}>🔔</Text>
+            <Text style={{fontSize:15,fontWeight:'700',color:C.navy,marginBottom:6}}>لا توجد إشعارات</Text>
+            <Text style={{fontSize:12,color:C.txtL}}>ستصلك الإشعارات هنا</Text>
+          </View>
+        :notifs.map((n,i)=>(
+          <View key={n.id||i} style={{backgroundColor:C.white,borderRadius:14,marginBottom:10,padding:14,borderWidth:1,borderColor:C.bgD}}>
+            <View style={{flexDirection:'row',alignItems:'center',gap:10,marginBottom:6}}>
+              <View style={{width:36,height:36,borderRadius:18,backgroundColor:C.blueL,alignItems:'center',justifyContent:'center'}}>
+                <Text style={{fontSize:16}}>🔔</Text>
+              </View>
+              <View style={{flex:1}}>
+                <Text style={{fontSize:13,fontWeight:'700',color:C.navy,textAlign:'right'}}>{n.title||'إشعار'}</Text>
+                {n.date&&<Text style={{fontSize:10,color:C.txtL,textAlign:'right'}}>{new Date(n.date).toLocaleDateString('ar-SA')}</Text>}
+              </View>
+            </View>
+            <Text style={{fontSize:12,color:C.txtM,textAlign:'right',lineHeight:20}}>{n.message||n.body||n.msg||''}</Text>
+          </View>
+        ))}
+        <View style={{height:20}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function UsageGuideScreen({onBack}){
+  const [open,setOpen]=useState(-1);
+  const items=[
+    {q:'كيف أحجز موعداً؟',a:'اذهب إلى تبويب "حجز" من الشريط السفلي، اختر العرض والفرع المناسب، ثم أدخل بياناتك واضغط "تأكيد الحجز".'},
+    {q:'كيف أسجّل حساباً جديداً؟',a:'من قائمة "المزيد"، اضغط "تسجيل الدخول" ثم "أنشئ حساباً". أدخل بياناتك الشخصية وكلمة المرور.'},
+    {q:'كيف أعرف حالة حجزي؟',a:'من قائمة "المزيد"، اضغط "حجوزاتي" لعرض جميع حجوزاتك وحالتها (معلق/مؤكد/ملغي).'},
+    {q:'كيف أتواصل مع العيادة؟',a:'من قائمة "المزيد"، اضغط "تواصل معنا" لعرض أرقام الهاتف والبريد الإلكتروني وعنوان العيادة.'},
+    {q:'كيف أعرف العروض المتاحة؟',a:'اذهب إلى تبويب "العروض" من الشريط السفلي لعرض جميع العروض الحالية مع الأسعار والتفاصيل.'},
+    {q:'كيف أضيف عرض إلى السلة؟',a:'اضغط على أي عرض لعرض تفاصيله، اختر الفرع والكمية ثم اضغط "أضف إلى السلة".'},
+  ];
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="إرشادات الاستخدام 📖" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        <LinearGradient colors={[C.navy,C.navyM]} style={{borderRadius:16,padding:20,alignItems:'center',marginBottom:20}}>
+          <Text style={{fontSize:36,marginBottom:10}}>📱</Text>
+          <Text style={{fontSize:16,fontWeight:'700',color:'white',marginBottom:4}}>دليل استخدام التطبيق</Text>
+          <Text style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>أسئلة شائعة وإرشادات</Text>
+        </LinearGradient>
+        {items.map((it,i)=>(
+          <TouchableOpacity key={i} onPress={()=>setOpen(open===i?-1:i)} activeOpacity={0.8}
+            style={{backgroundColor:C.white,borderRadius:14,marginBottom:10,borderWidth:1,borderColor:open===i?C.blue:C.bgD,overflow:'hidden'}}>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:14}}>
+              <Text style={{fontSize:16,color:C.blue}}>{open===i?'▾':'▸'}</Text>
+              <Text style={{flex:1,fontSize:13,fontWeight:'600',color:C.navy,textAlign:'right',marginRight:8}}>{it.q}</Text>
+            </View>
+            {open===i&&(
+              <View style={{paddingHorizontal:14,paddingBottom:14}}>
+                <View style={{height:1,backgroundColor:C.bgD,marginBottom:10}}/>
+                <Text style={{fontSize:12,color:C.txtM,textAlign:'right',lineHeight:22}}>{it.a}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+        <View style={{height:20}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function AboutScreen({onBack}){
+  const [settings,setSettings]=useState(null);
+  useEffect(()=>{
+    (async()=>{
+      const data=await apiFetch('/settings');
+      if(data) setSettings(data);
+    })();
+  },[]);
+  const name=settings?.appNameAr||'عيادات د. باصفار';
+  const tag=settings?.tagline||'رعاية طبية متخصصة بأحدث التقنيات';
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="معلومات عنّا ℹ️" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        <LinearGradient colors={[C.navy,C.navyM]} style={{borderRadius:20,padding:28,alignItems:'center',marginBottom:20}}>
+          <LinearGradient colors={[C.blue,C.blueD]} style={{width:72,height:72,borderRadius:20,alignItems:'center',justifyContent:'center',marginBottom:14,borderWidth:2,borderColor:'rgba(36,99,235,0.4)'}}>
+            <View style={{width:44,height:3,backgroundColor:'white',borderRadius:2,marginBottom:4}}/>
+            <Text style={{fontSize:8,fontWeight:'900',color:'white',letterSpacing:1}}>DR BASAFFAR</Text>
+          </LinearGradient>
+          <Text style={{fontSize:18,fontWeight:'700',color:'white',marginBottom:4}}>{name}</Text>
+          <Text style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{tag}</Text>
+        </LinearGradient>
+        <View style={{backgroundColor:C.white,borderRadius:16,padding:18,borderWidth:1,borderColor:C.bgD,marginBottom:14}}>
+          <Text style={{fontSize:13,fontWeight:'700',color:C.navy,marginBottom:10,textAlign:'right'}}>من نحن</Text>
+          <Text style={{fontSize:12,color:C.txtM,lineHeight:22,textAlign:'right'}}>
+            عيادات د. باصفار هي مجموعة طبية متخصصة تقدم خدمات طب الأسنان والجلدية والليزر والعيون والتجميل بأحدث التقنيات العالمية. نسعى لتقديم أعلى مستويات الرعاية الصحية بأيدي نخبة من الاستشاريين والأخصائيين.
+          </Text>
+        </View>
+        <View style={{backgroundColor:C.white,borderRadius:16,padding:18,borderWidth:1,borderColor:C.bgD,marginBottom:14}}>
+          <Text style={{fontSize:13,fontWeight:'700',color:C.navy,marginBottom:10,textAlign:'right'}}>رؤيتنا</Text>
+          <Text style={{fontSize:12,color:C.txtM,lineHeight:22,textAlign:'right'}}>
+            أن نكون الخيار الأول في المملكة العربية السعودية للرعاية الطبية التخصصية، من خلال تقديم خدمات عالية الجودة بأسعار تنافسية.
+          </Text>
+        </View>
+        <View style={{backgroundColor:C.white,borderRadius:16,padding:18,borderWidth:1,borderColor:C.bgD}}>
+          <Text style={{fontSize:13,fontWeight:'700',color:C.navy,marginBottom:10,textAlign:'right'}}>قيمنا</Text>
+          {['الجودة والتميز في الخدمة الطبية','الشفافية والمصداقية مع عملائنا','التطوير المستمر واعتماد أحدث التقنيات','الاهتمام براحة المريض وسلامته'].map((v,i)=>(
+            <View key={i} style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:8}}>
+              <Text style={{fontSize:12,color:C.blue}}>✦</Text>
+              <Text style={{flex:1,fontSize:12,color:C.txtM,textAlign:'right'}}>{v}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={{height:20}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function ContactScreen({onBack}){
+  const [settings,setSettings]=useState(null);
+  useEffect(()=>{
+    (async()=>{
+      const data=await apiFetch('/settings');
+      if(data) setSettings(data);
+    })();
+  },[]);
+  const phone=settings?.phone||'+966501234567';
+  const email=settings?.email||'info@basaffar.com';
+  const website=settings?.website||'www.basaffar.com';
+  const contacts=[
+    {icon:'📞',label:'الهاتف',value:phone},
+    {icon:'📧',label:'البريد الإلكتروني',value:email},
+    {icon:'🌐',label:'الموقع الإلكتروني',value:website},
+    {icon:'📍',label:'العنوان',value:'طريق الملك عبدالله، حي النزهة، الرياض'},
+    {icon:'🕐',label:'ساعات العمل',value:'السبت - الخميس: 8 ص - 10 م'},
+  ];
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="تواصل معنا 💬" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        <LinearGradient colors={[C.navy,C.navyM]} style={{borderRadius:16,padding:24,alignItems:'center',marginBottom:20}}>
+          <Text style={{fontSize:36,marginBottom:10}}>💬</Text>
+          <Text style={{fontSize:16,fontWeight:'700',color:'white',marginBottom:4}}>تواصل معنا</Text>
+          <Text style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>يسعدنا خدمتك دائماً</Text>
+        </LinearGradient>
+        {contacts.map((c,i)=>(
+          <View key={i} style={{backgroundColor:C.white,borderRadius:14,marginBottom:10,padding:14,borderWidth:1,borderColor:C.bgD,flexDirection:'row',alignItems:'center',gap:12}}>
+            <View style={{width:40,height:40,borderRadius:10,backgroundColor:C.blueL,alignItems:'center',justifyContent:'center'}}>
+              <Text style={{fontSize:18}}>{c.icon}</Text>
+            </View>
+            <View style={{flex:1}}>
+              <Text style={{fontSize:11,color:C.txtL,textAlign:'right',marginBottom:2}}>{c.label}</Text>
+              <Text style={{fontSize:13,fontWeight:'600',color:C.navy,textAlign:'right'}}>{c.value}</Text>
+            </View>
+          </View>
+        ))}
+        <View style={{height:20}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function PrivacyScreen({onBack}){
+  const sections=[
+    {t:'جمع المعلومات',c:'نقوم بجمع المعلومات الشخصية التي تقدمها لنا عند التسجيل أو الحجز، مثل الاسم ورقم الهاتف والبريد الإلكتروني. نستخدم هذه المعلومات فقط لتقديم خدماتنا الطبية.'},
+    {t:'استخدام المعلومات',c:'نستخدم بياناتك الشخصية لإدارة حجوزاتك وتقديم الخدمات الطبية المطلوبة وإرسال الإشعارات المتعلقة بمواعيدك وتحسين خدماتنا.'},
+    {t:'حماية المعلومات',c:'نلتزم بحماية معلوماتك الشخصية باستخدام تقنيات أمان متقدمة. لا نشارك بياناتك مع أطراف ثالثة إلا بموافقتك أو عند الضرورة القانونية.'},
+    {t:'حقوق المستخدم',c:'يحق لك الاطلاع على بياناتك الشخصية وتعديلها أو حذفها في أي وقت. يمكنك التواصل معنا لممارسة هذه الحقوق.'},
+    {t:'ملفات تعريف الارتباط',c:'نستخدم ملفات تعريف الارتباط لتحسين تجربتك في التطبيق. يمكنك التحكم في إعدادات ملفات تعريف الارتباط من خلال إعدادات جهازك.'},
+    {t:'التعديلات',c:'نحتفظ بالحق في تعديل سياسة الخصوصية في أي وقت. سيتم إبلاغك بأي تغييرات جوهرية عبر التطبيق أو البريد الإلكتروني.'},
+  ];
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="سياسة الخصوصية 🔒" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        <LinearGradient colors={[C.navy,C.navyM]} style={{borderRadius:16,padding:20,alignItems:'center',marginBottom:20}}>
+          <Text style={{fontSize:36,marginBottom:10}}>🔒</Text>
+          <Text style={{fontSize:16,fontWeight:'700',color:'white',marginBottom:4}}>سياسة الخصوصية</Text>
+          <Text style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>آخر تحديث: يناير 2026</Text>
+        </LinearGradient>
+        {sections.map((s,i)=>(
+          <View key={i} style={{backgroundColor:C.white,borderRadius:14,marginBottom:10,padding:14,borderWidth:1,borderColor:C.bgD}}>
+            <Text style={{fontSize:13,fontWeight:'700',color:C.navy,marginBottom:8,textAlign:'right'}}>{s.t}</Text>
+            <Text style={{fontSize:12,color:C.txtM,lineHeight:22,textAlign:'right'}}>{s.c}</Text>
+          </View>
+        ))}
+        <View style={{height:20}}/>
       </ScrollView>
     </SafeAreaView>
   );
