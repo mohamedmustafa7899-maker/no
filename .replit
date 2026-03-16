@@ -30,20 +30,20 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd mobile-app && npx vite --host 0.0.0.0 --port 5000"
+args = "cd mobile-app && npm run dev -- --host 0.0.0.0 --port 5000"
 waitForPort = 5000
 
 [[workflows.workflow]]
 name = "Start Backend"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js"
 waitForPort = 3000
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [[ports]]
 localPort = 3000
