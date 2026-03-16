@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>لوحة تحكم DR BASAFFAR</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#2463EB;--gold-l:#DBEAFE;--gold-d:#1A4AC4;
+  --br:#0A1628;--br-m:#0F2347;--br-s:#1A3A6B;
+  --bg:#F0F6FF;--bg2:#DBEAFE;--bg3:#C7D9F5;
+  --w:#FFFFFF;
+  --txt:#0A1628;--txt-m:#1E3A6B;--txt-l:#6B86AA;
+  --grn:#2A8A45;--grn-l:#EAF7EE;
+  --red:#D03030;--red-l:#FDEAEA;
+  --blu:#2463EB;--blu-l:#DBEAFE;
+  --amb:#C47A20;--amb-l:#FEF3E0;
+  --sb:240px;--r:10px;--rl:14px;
+  --sh:0 2px 12px rgba(10,22,40,.07);
+  --shm:0 6px 28px rgba(10,22,40,.13);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex}
+.sb{width:var(--sb);flex-shrink:0;background:linear-gradient(180deg,var(--br) 0%,var(--br-m) 100%);
+  display:flex;flex-direction:column;position:fixed;right:0;top:0;bottom:0;z-index:200;overflow:hidden}
+.sb-logo{padding:20px 18px 14px;border-bottom:1px solid rgba(36,99,235,.15);display:flex;align-items:center;gap:11px}
+.sb-logo-box{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--gold),var(--gold-d));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-box svg{width:22px;height:22px;fill:none;stroke:white;stroke-width:1.8}
+.sb-ar{font-size:15px;font-weight:900;color:var(--gold);line-height:1.1}
+.sb-en{font-size:8px;color:rgba(36,99,235,.45);letter-spacing:2.5px}
+.sb-user{margin:10px 14px 4px;background:rgba(36,99,235,.08);border:1px solid rgba(36,99,235,.18);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:9px}
+.sb-av{width:30px;height:30px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0}
+.sb-uname{font-size:11px;color:rgba(255,255,255,.85);font-weight:600}
+.sb-urole{font-size:9px;color:rgba(36,99,235,.55)}
+.sb-scroll{flex:1;overflow-y:auto;padding:6px 0}
+.sb-scroll::-webkit-scrollbar{display:none}
+.sb-sec{font-size:8px;font-weight:700;color:rgba(36,99,235,.35);letter-spacing:2px;padding:12px 18px 4px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 14px 9px 18px;cursor:pointer;transition:all .18s;border-right:3px solid transparent;margin:1px 0;text-decoration:none}
+.sb-item:hover{background:rgba(36,99,235,.07)}
+.sb-item.act{background:rgba(36,99,235,.13);border-right-color:var(--gold)}
+.sb-ico{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sb-item.act .sb-ico{background:rgba(36,99,235,.15)}
+.sb-lbl{font-size:12px;font-weight:600;color:rgba(255,255,255,.6);flex:1}
+.sb-item.act .sb-lbl{color:#DBEAFE}
+.sb-cnt{background:var(--red);color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;min-width:18px;text-align:center}
+.sb-foot{padding:10px 16px;border-top:1px solid rgba(36,99,235,.1);font-size:9px;color:rgba(255,255,255,.25);text-align:center}
+.main{margin-right:var(--sb);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:58px;background:var(--w);border-bottom:1px solid var(--bg3);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
+.tb-l{display:flex;align-items:center;gap:10px}
+.tb-page-title{font-size:15px;font-weight:700;color:var(--br)}
+.tb-r{display:flex;align-items:center;gap:10px}
+.api-status{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--bg3);border-radius:8px;padding:5px 12px}
+#api-dot{width:8px;height:8px;border-radius:50%;background:var(--txt-l);transition:background .3s}
+#api-lbl{font-size:10px;color:var(--txt-l)}
+.tb-clock{font-size:11px;color:var(--txt-l);background:var(--bg);padding:5px 12px;border-radius:8px;border:1px solid var(--bg3)}
+.content{flex:1;padding:22px;overflow-x:hidden}
+.page{display:none;animation:fadeIn .25s ease}
+.page.act{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat{background:var(--w);border-radius:var(--rl);padding:18px;border:1px solid var(--bg3);box-shadow:var(--sh);position:relative;overflow:hidden;cursor:default}
+.stat::after{content:'';position:absolute;top:0;right:0;width:3px;height:100%}
+.stat.gold::after{background:var(--gold)}.stat.grn::after{background:var(--grn)}.stat.blu::after{background:var(--blu)}.stat.red::after{background:var(--red)}
+.stat-ico{font-size:28px;margin-bottom:8px}.stat-num{font-size:30px;font-weight:900;color:var(--br);line-height:1}.stat-lbl{font-size:10px;color:var(--txt-l);margin-top:6px}
+.stat-chg{font-size:10px;font-weight:700;margin-top:3px}.stat-chg.up{color:var(--grn)}.stat-chg.dn{color:var(--red)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g31{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px}
+.card{background:var(--w);border-radius:var(--rl);border:1px solid var(--bg3);box-shadow:var(--sh);overflow:hidden;margin-bottom:20px}
+.card-h{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bg)}
+.card-h-l{display:flex;align-items:center;gap:8px}
+.card-icon{font-size:16px}.card-title{font-size:13px;font-weight:700;color:var(--br)}.card-sub{font-size:10px;color:var(--txt-l);margin-top:1px}
+.card-b{padding:16px 18px}.card-b.np{padding:0}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{padding:9px 16px;text-align:right;font-size:9px;font-weight:700;color:var(--txt-l);background:var(--bg);letter-spacing:.5px;white-space:nowrap}
+td{padding:11px 16px;font-size:12px;color:var(--txt);border-bottom:1px solid var(--bg);vertical-align:middle}
+tr:last-child td{border:none}
+tr:hover td{background:rgba(240,246,255,.6)}
+.tbl-img{width:44px;height:40px;border-radius:8px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tbl-name{font-size:12px;font-weight:600;color:var(--br)}.tbl-sub{font-size:10px;color:var(--txt-l);margin-top:1px}
+.bx{display:inline-flex;align-items:center;padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;white-space:nowrap}
+.bx.grn{background:var(--grn-l);color:var(--grn)}.bx.red{background:var(--red-l);color:var(--red)}
+.bx.gold{background:var(--gold-l);color:var(--gold-d)}.bx.blu{background:var(--blu-l);color:var(--blu)}
+.bx.gray{background:var(--bg2);color:var(--txt-l)}.bx.amb{background:var(--amb-l);color:var(--amb)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--r);border:none;cursor:pointer;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;transition:all .18s}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-d));color:white;box-shadow:0 3px 10px rgba(36,99,235,.3)}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(36,99,235,.4)}
+.btn-out{background:transparent;border:1px solid var(--bg3);color:var(--txt-m)}.btn-out:hover{background:var(--bg)}
+.btn-red{background:var(--red-l);color:var(--red);border:1px solid rgba(208,48,48,.12)}.btn-red:hover{background:var(--red);color:white}
+.btn-grn{background:var(--grn-l);color:var(--grn);border:1px solid rgba(42,138,69,.12)}.btn-grn:hover{background:var(--grn);color:white}
+.btn-sm{padding:5px 10px;font-size:11px}.btn-xs{padding:4px 8px;font-size:10px;border-radius:7px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.fc{grid-column:1/-1}
+.fw{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:11px;font-weight:700;color:var(--txt-m)}
+.fi,.fs,.ft{width:100%;padding:9px 12px;border:1px solid var(--bg3);border-radius:var(--r);background:var(--w);font-family:'Cairo',sans-serif;font-size:12px;color:var(--txt);direction:rtl;transition:border-color .2s;outline:none}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(36,99,235,.1)}
+.fi::placeholder{color:var(--txt-l)}.ft{resize:vertical;min-height:80px}
+.upload-zone{width:100%;min-height:100px;border:2px dashed var(--bg3);border-radius:var(--rl);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;background:var(--bg);transition:all .2s;position:relative;overflow:hidden}
+.upload-zone:hover{border-color:var(--gold);background:rgba(36,99,235,.03)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.uz-ico{font-size:24px}.uz-lbl{font-size:11px;font-weight:700;color:var(--txt-m)}.uz-sub{font-size:9px;color:var(--txt-l)}
+.tog{position:relative;width:40px;height:22px;cursor:pointer}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-track{position:absolute;inset:0;background:var(--bg3);border-radius:11px;transition:background .25s}
+.tog input:checked~.tog-track{background:var(--gold)}
+.tog-thumb{position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .25s}
+.tog input:checked~.tog-track~.tog-thumb{transform:translateX(-18px)}
+.tog-wrap{display:flex;align-items:center;gap:10px}
+.tog-lbl{font-size:11px;font-weight:600;color:var(--txt-m)}
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:rgba(10,22,40,.65);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.ov.show{display:flex !important}
+.modal{background:var(--w);border-radius:16px;width:100%;max-width:580px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(10,22,40,.4);animation:mIn .28s ease;position:relative}
+.modal.wide{max-width:680px}
+@keyframes mIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
+.mh{padding:16px 20px;border-bottom:1px solid var(--bg);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,var(--br),var(--br-m))}
+.mt{font-size:14px;font-weight:700;color:white}
+.mc{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;font-family:sans-serif;line-height:1}
+.mb{padding:18px 20px;overflow-y:auto;flex:1;min-height:0}
+.mf{padding:12px 20px;border-top:1px solid var(--bg);display:flex;justify-content:flex-end;gap:10px;background:var(--bg)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--br);color:white;padding:10px 22px;border-radius:30px;font-size:12px;font-weight:600;z-index:9999;transition:all .3s;border:1px solid rgba(36,99,235,.3);white-space:nowrap;pointer-events:none;opacity:0}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.ph-l .ph-title{font-size:18px;font-weight:900;color:var(--br)}.ph-l .ph-sub{font-size:11px;color:var(--txt-l);margin-top:2px}
+.ph-r{display:flex;gap:8px}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--w);border:1px solid var(--bg3);border-radius:var(--r);padding:8px 14px;min-width:200px}
+.search-box input{border:none;outline:none;font-family:'Cairo',sans-serif;font-size:12px;color:var(--txt);flex:1;background:transparent}
+.search-box input::placeholder{color:var(--txt-l)}
+.tabs{display:flex;gap:0;background:var(--bg);border-radius:10px;padding:3px;margin-bottom:18px;width:fit-content}
+.tab{padding:7px 18px;border-radius:8px;font-size:11px;font-weight:700;color:var(--txt-l);cursor:pointer;transition:all .2s}
+.tab.act{background:var(--w);color:var(--br);box-shadow:var(--sh)}
+.dept-thumb{width:90px;height:72px;border-radius:12px;overflow:hidden;position:relative;flex-shrink:0}
+.dept-thumb img{width:100%;height:100%;object-fit:cover}
+.dept-thumb-lbl{position:absolute;bottom:0;left:0;right:0;padding:3px 6px;text-align:center;font-size:9px;font-weight:700;color:white;background:rgba(10,22,40,.65)}
+.dp-prev{width:120px;height:130px;border-radius:14px;overflow:hidden;position:relative;flex-shrink:0;border:1px solid var(--bg3)}
+.dp-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.dp-prev-lbl{position:absolute;bottom:0;left:0;right:0;height:44px;background:linear-gradient(transparent,rgba(10,22,40,.85));display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px}
+.dp-prev-lbl span{font-size:11px;font-weight:700;color:white}
+.clr-swatch{width:60px;height:26px;border-radius:6px;border:1px solid var(--bg3)}
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.prog-lbl{font-size:10px;color:var(--txt-m);font-weight:600;width:90px;flex-shrink:0}
+.prog-bar{flex:1;height:6px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.prog-num{font-size:10px;color:var(--txt-l);width:30px;text-align:left;flex-shrink:0}
+.feed-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--bg)}
+.feed-item:last-child{border:none}
+.feed-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.feed-text{font-size:11px;color:var(--txt-m);line-height:1.5}
+.feed-time{font-size:9px;color:var(--txt-l);margin-top:2px}
+.chart-bars{display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 4px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar{width:100%;border-radius:5px 5px 0 0;position:relative;min-width:18px}
+.bar-lbl{font-size:9px;color:var(--txt-l);font-weight:600}
+.bk-info-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bg)}
+.bk-info-row:last-child{border:none}
+.bk-lbl{font-size:10px;color:var(--txt-l);font-weight:600}.bk-val{font-size:12px;font-weight:600;color:var(--br)}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bg)}
+.set-row:last-child{border:none}
+.set-l{display:flex;align-items:center;gap:10px}
+.set-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.set-txt .s-lbl{font-size:12px;font-weight:600;color:var(--br)}.set-txt .s-sub{font-size:10px;color:var(--txt-l);margin-top:1px}
+.sdiv{display:flex;align-items:center;gap:10px;margin:16px 0 12px}
+.sdiv-line{flex:1;height:1px;background:var(--bg3)}.sdiv-txt{font-size:10px;font-weight:700;color:var(--txt-l);letter-spacing:1px;white-space:nowrap}
+.dept-preview-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px}
+.banner-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:10px;margin-bottom:8px;cursor:grab;border:1px solid var(--bg3)}
+.banner-thumb{width:80px;height:50px;border-radius:8px;background:var(--br-m);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sb">
+  <div class="sb-logo">
+    <div class="sb-logo-box"><svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7z"/></svg></div>
+    <div><div class="sb-ar">باصفار</div><div class="sb-en">DR BASAFFAR</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">م</div><div><div class="sb-uname">مدير النظام</div><div class="sb-urole">Super Admin</div></div></div>
+  <div class="sb-scroll">
+    <div class="sb-sec">الرئيسية</div>
+    <div class="sb-item act" onclick="nav('pg-home',this)"><div class="sb-ico">📊</div><div class="sb-lbl">لوحة المعلومات</div></div>
+    <div class="sb-sec">إدارة التطبيق</div>
+    <div class="sb-item" onclick="nav('pg-offers',this)"><div class="sb-ico">🎁</div><div class="sb-lbl">العروض والأسعار</div></div>
+    <div class="sb-item" onclick="nav('pg-doctors',this)"><div class="sb-ico">👨‍⚕️</div><div class="sb-lbl">الأطباء</div></div>
+    <div class="sb-item" onclick="nav('pg-depts',this)"><div class="sb-ico">🏥</div><div class="sb-lbl">الأقسام والصور</div></div>
+    <div class="sb-item" onclick="nav('pg-banners',this)"><div class="sb-ico">🖼️</div><div class="sb-lbl">البنرات</div></div>
+    <div class="sb-item" onclick="nav('pg-branches',this)"><div class="sb-ico">📍</div><div class="sb-lbl">الفروع</div></div>
+    <div class="sb-sec">العمليات</div>
+    <div class="sb-item" onclick="nav('pg-bookings',this)"><div class="sb-ico">📅</div><div class="sb-lbl">الحجوزات</div><div class="sb-cnt" id="bk-cnt">0</div></div>
+    <div class="sb-item" onclick="nav('pg-clients',this)"><div class="sb-ico">👥</div><div class="sb-lbl">العملاء</div></div>
+    <div class="sb-sec">التسويق</div>
+    <div class="sb-item" onclick="nav('pg-notifs',this)"><div class="sb-ico">🔔</div><div class="sb-lbl">الإشعارات</div></div>
+    <div class="sb-sec">الإعدادات</div>
+    <div class="sb-item" onclick="nav('pg-settings',this)"><div class="sb-ico">⚙️</div><div class="sb-lbl">إعدادات التطبيق</div></div>
+    <div class="sb-item" onclick="nav('pg-admins',this)"><div class="sb-ico">🔐</div><div class="sb-lbl">المديرون</div></div>
+  </div>
+  <div class="sb-foot">© 2026 DR BASAFFAR CLINIC</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-l"><div class="tb-page-title" id="tb-title">لوحة المعلومات</div></div>
+    <div class="tb-r">
+      <div class="api-status"><div id="api-dot"></div><span id="api-lbl">جاري الاتصال...</span></div>
+      <div class="tb-clock" id="clk">09:41</div>
+      <button class="btn btn-gold" onclick="loadAll()">🔄 تحديث</button>
+    </div>
+  </div>
+  <div class="content">
+
+<!-- HOME -->
+<div class="page act" id="pg-home">
+  <div class="ph"><div class="ph-l"><div class="ph-title">أهلاً، مدير النظام 👋</div><div class="ph-sub">إليك ملخص اليوم</div></div></div>
+  <div class="stats-row">
+    <div class="stat gold"><div class="stat-ico">📅</div><div class="stat-num" id="s-bookings">—</div><div class="stat-lbl">حجوزات اليوم</div></div>
+    <div class="stat grn"><div class="stat-ico">💰</div><div class="stat-num" id="s-sales">—</div><div class="stat-lbl">مبيعات اليوم</div></div>
+    <div class="stat blu"><div class="stat-ico">👥</div><div class="stat-num" id="s-clients">—</div><div class="stat-lbl">إجمالي العملاء</div></div>
+    <div class="stat red"><div class="stat-ico">🎁</div><div class="stat-num" id="s-offers">—</div><div class="stat-lbl">عروض نشطة</div></div>
+  </div>
+  <div class="g31">
+    <div class="card" style="margin:0"><div class="card-h"><div class="card-h-l"><span class="card-icon">📈</span><div class="card-title">الحجوزات — آخر 7 أيام</div></div></div><div class="card-b"><div class="chart-bars" id="chart1"></div></div></div>
+    <div class="card" style="margin:0"><div class="card-h"><div class="card-h-l"><span class="card-icon">🏆</span><div class="card-title">أكثر الأقسام طلباً</div></div></div>
+    <div class="card-b">
+      <div class="prog-row"><div class="prog-lbl">الأسنان</div><div class="prog-bar"><div class="prog-fill" style="width:78%;background:var(--gold)"></div></div><div class="prog-num">78%</div></div>
+      <div class="prog-row"><div class="prog-lbl">الجلدية</div><div class="prog-bar"><div class="prog-fill" style="width:55%;background:var(--grn)"></div></div><div class="prog-num">55%</div></div>
+      <div class="prog-row"><div class="prog-lbl">التجميل</div><div class="prog-bar"><div class="prog-fill" style="width:40%;background:var(--blu)"></div></div><div class="prog-num">40%</div></div>
+      <div class="prog-row"><div class="prog-lbl">العيون</div><div class="prog-bar"><div class="prog-fill" style="width:28%;background:var(--amb)"></div></div><div class="prog-num">28%</div></div>
+    </div></div>
+  </div>
+  <div class="g2" style="margin-bottom:0">
+    <div class="card" style="margin:0"><div class="card-h"><div class="card-h-l"><span class="card-icon">📅</span><div class="card-title">آخر الحجوزات</div></div><button class="btn btn-out btn-sm" onclick="nav('pg-bookings',document.querySelector('[onclick*=pg-bookings]'))">عرض الكل</button></div><div class="card-b np"><div class="tbl-wrap"><table id="home-bookings-tbl"><tr><th>العميل</th><th>العرض</th><th>الفرع</th><th>الحالة</th></tr><tr><td colspan="4" style="text-align:center;color:var(--txt-l);padding:20px">جاري التحميل...</td></tr></table></div></div></div>
+    <div class="card" style="margin:0"><div class="card-h"><div class="card-h-l"><span class="card-icon">⚡</span><div class="card-title">آخر الأنشطة</div></div></div><div class="card-b" id="feed-list"><div class="feed-item"><div class="feed-dot" style="background:var(--grn)"></div><div><div class="feed-text">النظام جاهز</div><div class="feed-time">الآن</div></div></div></div></div>
+  </div>
+</div>
+
+<!-- OFFERS -->
+<div class="page" id="pg-offers">
+  <div class="ph">
+    <div class="ph-l"><div class="ph-title">العروض والأسعار</div><div class="ph-sub">إدارة كل عروض التطبيق</div></div>
+    <div class="ph-r">
+      <div class="search-box"><span>🔍</span><input placeholder="ابحث..." id="off-search" oninput="filterTbl(this,'offers-tbl')"></div>
+      <button class="btn btn-gold" onclick="openModal('m-offer','إضافة عرض جديد',false)">+ إضافة عرض</button>
+    </div>
+  </div>
+  <div class="tabs" id="off-tabs">
+    <div class="tab act" onclick="setTab(this,'off-tabs','الكل')">الكل</div>
+    <div class="tab" onclick="setTab(this,'off-tabs','أسنان')">الأسنان</div>
+    <div class="tab" onclick="setTab(this,'off-tabs','جلدية')">الجلدية</div>
+    <div class="tab" onclick="setTab(this,'off-tabs','عيون')">العيون</div>
+    <div class="tab" onclick="setTab(this,'off-tabs','تجميل')">التجميل</div>
+  </div>
+  <div class="card"><div class="card-b np"><div class="tbl-wrap"><table id="offers-tbl"><tr><th></th><th>أيقونة</th><th>اسم العرض</th><th>القسم</th><th>السعر الأصلي</th><th>السعر بعد الخصم</th><th>الحالة</th><th>إجراءات</th></tr><tr><td colspan="8" style="text-align:center;color:var(--txt-l);padding:20px">جاري التحميل...</td></tr></table></div></div></div>
+</div>
+
+<!-- DOCTORS -->
+<div class="page" id="pg-doctors">
+  <div class="ph">
+    <div class="ph-l"><div class="ph-title">إدارة الأطباء</div><div class="ph-sub">صور، تخصصات، فروع</div></div>
+    <div class="ph-r"><button class="btn btn-gold" onclick="openModal('m-doctor','إضافة طبيب جديد',false)">+ إضافة طبيب</button></div>
+  </div>
+  <div id="doctors-grid" class="g3">
+    <div class="card" style="margin:0;cursor:pointer" onclick="openModal('m-doctor','إضافة طبيب جديد',false)">
+      <div style="height:80px;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><span style="font-size:24px;opacity:.3">+</span><span style="font-size:11px;color:var(--txt-l);font-weight:600">إضافة طبيب</span></div>
+      <div class="card-b" style="text-align:center;padding:14px"><button class="btn btn-gold" onclick="openModal('m-doctor','إضافة طبيب جديد',false)">+ إضافة الآن</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- DEPTS -->
+<div class="page" id="pg-depts">
+  <div class="ph">
+    <div class="ph-l"><div class="ph-title">الأقسام والصور</div><div class="ph-sub">تحكم في صور وألوان وترتيب أقسام التطبيق</div></div>
+    <div class="ph-r"><button class="btn btn-gold" onclick="openModal('m-dept','إضافة قسم جديد',false)">+ قسم جديد</button></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><div class="card-h-l"><span class="card-icon">📱</span><div class="card-title">معاينة مباشرة — كما يظهر في التطبيق</div></div></div>
+    <div class="card-b"><div class="dept-preview-row" id="dept-preview-row"></div></div>
+  </div>
+  <div class="card"><div class="card-b np"><div class="tbl-wrap"><table id="depts-tbl"><tr><th>صورة القسم</th><th>اسم القسم</th><th>الحالة</th><th>إجراءات</th></tr><tr><td colspan="4" style="text-align:center;color:var(--txt-l);padding:20px">جاري التحميل...</td></tr></table></div></div></div>
+</div>
+
+<!-- BANNERS -->
+<div class="page" id="pg-banners">
+  <div class="ph">
+    <div class="ph-l"><div class="ph-title">البنرات</div></div>
+    <div class="ph-r"><button class="btn btn-gold" onclick="openModal('m-banner','إضافة بنر جديد',false)">+ بنر جديد</button></div>
+  </div>
+  <div class="card"><div class="card-h"><div class="card-title">🎠 البنرات الرئيسية</div></div><div class="card-b" id="banners-list"><p style="color:var(--txt-l);text-align:center;padding:20px">جاري التحميل...</p></div></div>
+</div>
+
+<!-- BRANCHES -->
+<div class="page" id="pg-branches">
+  <div class="ph">
+    <div class="ph-l"><div class="ph-title">الفروع</div></div>
+    <div class="ph-r"><button class="btn btn-gold" onclick="openModal('m-branch','إضافة فرع جديد',false)">+ فرع جديد</button></div>
+  </div>
+  <div id="branches-grid" class="g3"></div>
+</div>
+
+<!-- BOOKINGS -->
+<div class="page" id="pg-bookings">
+  <div class="ph">
+    <div class="ph-l"><div class="ph-title">الحجوزات</div></div>
+    <div class="ph-r"><div class="search-box"><span>🔍</span><input placeholder="ابحث..." oninput="filterTbl(this,'bookings-tbl')"></div></div>
+  </div>
+  <div class="tabs" id="bk-tabs">
+    <div class="tab act" onclick="setTab(this,'bk-tabs','الكل')">الكل</div>
+    <div class="tab" onclick="setTab(this,'bk-tabs','جديد')">جديد</div>
+    <div class="tab" onclick="setTab(this,'bk-tabs','مؤكد')">مؤكد</div>
+    <div class="tab" onclick="setTab(this,'bk-tabs','ملغى')">ملغى</div>
+  </div>
+  <div class="card"><div class="card-b np"><div class="tbl-wrap"><table id="bookings-tbl"><tr><th>رقم الحجز</th><th>العميل</th><th>الهاتف</th><th>العرض</th><th>الفرع</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th></tr><tr><td colspan="8" style="text-align:center;color:var(--txt-l);padding:20px">جاري التحميل...</td></tr></table></div></div></div>
+</div>
+
+<!-- CLIENTS -->
+<div class="page" id="pg-clients">
+  <div class="ph">
+    <div class="ph-l"><div class="ph-title">العملاء</div></div>
+    <div class="ph-r"><div class="search-box"><span>🔍</span><input placeholder="ابحث..." oninput="filterTbl(this,'clients-tbl')"></div></div>
+  </div>
+  <div class="card"><div class="card-b np"><div class="tbl-wrap"><table id="clients-tbl"><tr><th>الاسم</th><th>الهاتف</th><th>الجنسية</th><th>العمر</th><th>الحجوزات</th><th>تاريخ التسجيل</th></tr><tr><td colspan="6" style="text-align:center;color:var(--txt-l);padding:20px">جاري التحميل...</td></tr></table></div></div></div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="page" id="pg-notifs">
+  <div class="ph"><div class="ph-l"><div class="ph-title">الإشعارات</div></div><div class="ph-r"><button class="btn btn-gold" onclick="openModal('m-notif','إرسال إشعار جديد',false)">+ إرسال إشعار</button></div></div>
+  <div class="g2" style="margin-bottom:0">
+    <div class="card" style="margin:0">
+      <div class="card-h"><div class="card-title">📤 إرسال سريع</div></div>
+      <div class="card-b">
+        <div class="fg" style="margin-bottom:14px">
+          <div class="fw fc"><div class="fl">عنوان الإشعار</div><input class="fi" id="quick-notif-title" placeholder="مثال: عروض رمضان 🌙"></div>
+          <div class="fw fc"><div class="fl">نص الرسالة</div><textarea class="ft" id="quick-notif-body" placeholder="اكتب رسالتك هنا..." style="height:70px"></textarea></div>
+          <div class="fw"><div class="fl">الجمهور</div><select class="fs" id="quick-notif-aud"><option>كل العملاء</option><option>عملاء الأسنان</option><option>عملاء الجلدية</option><option>عملاء العيون</option><option>عملاء التجميل</option></select></div>
+        </div>
+        <button class="btn btn-gold" onclick="sendQuickNotif()">🚀 إرسال الآن</button>
+      </div>
+    </div>
+    <div class="card" style="margin:0"><div class="card-h"><div class="card-title">📋 سجل الإشعارات</div></div><div class="card-b np"><div class="tbl-wrap"><table id="notifs-tbl"><tr><th>العنوان</th><th>الجمهور</th><th>الوصول</th><th>التاريخ</th></tr><tr><td colspan="4" style="text-align:center;color:var(--txt-l);padding:20px">لا توجد إشعارات بعد</td></tr></table></div></div></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="pg-settings">
+  <div class="ph"><div class="ph-l"><div class="ph-title">إعدادات التطبيق</div></div></div>
+  <div class="g2" style="margin-bottom:0">
+    <div>
+      <div class="card">
+        <div class="card-h"><div class="card-title">🏷️ هوية التطبيق</div></div>
+        <div class="card-b">
+          <div class="fg" style="margin-bottom:14px">
+            <div class="fw"><div class="fl">اسم التطبيق عربي</div><input class="fi" id="set-name-ar" value="باصفار"></div>
+            <div class="fw"><div class="fl">اسم التطبيق إنجليزي</div><input class="fi" id="set-name-en" value="DR BASAFFAR"></div>
+            <div class="fw fc"><div class="fl">الشعار / Tagline</div><input class="fi" id="set-tagline" value="مركز د. حسالم باصفار الطبي المتخصص"></div>
+          </div>
+          <button class="btn btn-gold" onclick="saveSettings()">💾 حفظ</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-h"><div class="card-title">📞 معلومات التواصل</div></div>
+        <div class="card-b">
+          <div class="fg">
+            <div class="fw"><div class="fl">الهاتف</div><input class="fi" id="set-phone" value="+966501234567" type="tel"></div>
+            <div class="fw"><div class="fl">البريد</div><input class="fi" id="set-email" value="info@basaffar.com" type="email"></div>
+            <div class="fw fc"><div class="fl">الموقع</div><input class="fi" id="set-web" value="www.basaffar.com"></div>
+          </div>
+          <button class="btn btn-gold" style="margin-top:12px" onclick="saveSettings()">💾 حفظ</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="card-title">⚙️ ميزات التطبيق</div></div>
+        <div class="card-b">
+          <div class="set-row"><div class="set-l"><div class="set-ico" style="background:var(--grn-l)">🛒</div><div class="set-txt"><div class="s-lbl">نظام الشراء</div></div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+          <div class="set-row"><div class="set-l"><div class="set-ico" style="background:var(--grn-l)">📅</div><div class="set-txt"><div class="s-lbl">الحجز الأونلاين</div></div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+          <div class="set-row"><div class="set-l"><div class="set-ico" style="background:var(--blu-l)">🔔</div><div class="set-txt"><div class="s-lbl">الإشعارات</div></div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMINS -->
+<div class="page" id="pg-admins">
+  <div class="ph"><div class="ph-l"><div class="ph-title">المديرون</div></div><div class="ph-r"><button class="btn btn-gold" onclick="openModal('m-admin','إضافة مدير جديد',false)">+ مدير جديد</button></div></div>
+  <div class="card"><div class="card-b np"><div class="tbl-wrap"><table id="admins-tbl">
+    <tr><th></th><th>الاسم</th><th>البريد</th><th>الدور</th><th>آخر دخول</th><th>الحالة</th><th>إجراءات</th></tr>
+    <tr><td><div class="sb-av">م</div></td><td><b>مدير النظام</b></td><td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7213161f1b1c3210130113141413005c111d1f">[email&#160;protected]</a></td><td><span class="bx red">Super Admin</span></td><td>الآن</td><td><span class="bx grn">نشط</span></td><td>—</td></tr>
+  </table></div></div></div>
+</div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══════════ MODALS ═══════════ -->
+
+<!-- OFFER MODAL -->
+<div class="ov" id="m-offer">
+  <div class="modal wide">
+    <div class="mh"><div class="mt" id="m-offer-title">إضافة عرض جديد</div><button class="mc" onclick="closeModal('m-offer')">×</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fw fc"><div class="fl">اسم العرض *</div><input class="fi" id="of-name" placeholder="مثال: زراعة الأسنان + تركيبة الزيركون"></div>
+        <div class="fw"><div class="fl">القسم *</div><select class="fs" id="of-dept"><option>الأسنان</option><option>الجلدية</option><option>العيون</option><option>التجميل</option></select></div>
+        <div class="fw"><div class="fl">الفرع</div><select class="fs" id="of-branch"><option>الكل</option><option>الرياض فقط</option><option>جدة فقط</option><option>الدمام فقط</option></select></div>
+        <div class="fw"><div class="fl">السعر الأصلي (ريال) *</div><input class="fi" id="of-price-orig" type="number" placeholder="3200"></div>
+        <div class="fw"><div class="fl">السعر بعد الخصم (ريال) *</div><input class="fi" id="of-price" type="number" placeholder="2590"></div>
+        <div class="fw fc"><div class="fl">وصف العرض</div><textarea class="ft" id="of-desc" placeholder="اكتب وصفاً تفصيلياً للعرض..."></textarea></div>
+      </div>
+      <div style="display:flex;gap:20px;align-items:center;margin-top:14px">
+        <div class="tog-wrap"><label class="tog"><input type="checkbox" checked id="of-active"><div class="tog-track"></div><div class="tog-thumb"></div></label><span class="tog-lbl">عرض في التطبيق</span></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-offer')">إلغاء</button><button class="btn btn-gold" onclick="saveOffer()">💾 حفظ العرض</button></div>
+  </div>
+</div>
+
+<!-- DOCTOR MODAL -->
+<div class="ov" id="m-doctor">
+  <div class="modal wide">
+    <div class="mh"><div class="mt" id="m-doctor-title">إضافة طبيب جديد</div><button class="mc" onclick="closeModal('m-doctor')">×</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fw"><div class="fl">الاسم الكامل *</div><input class="fi" id="dr-name" placeholder="د. اسم الطبيب"></div>
+        <div class="fw"><div class="fl">التخصص *</div><input class="fi" id="dr-spec" placeholder="مثال: أسنان وزراعة"></div>
+        <div class="fw"><div class="fl">سنوات الخبرة</div><input class="fi" id="dr-exp" type="number" placeholder="15"></div>
+        <div class="fw"><div class="fl">القسم</div><select class="fs" id="dr-dept"><option>الأسنان</option><option>الجلدية</option><option>العيون</option><option>التجميل</option></select></div>
+        <div class="fw fc"><div class="fl">عن الطبيب</div><textarea class="ft" id="dr-bio" placeholder="وصف موجز عن الطبيب وخبراته..."></textarea></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-doctor')">إلغاء</button><button class="btn btn-gold" onclick="saveDoctor()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- DEPT MODAL -->
+<div class="ov" id="m-dept">
+  <div class="modal wide">
+    <div class="mh"><div class="mt" id="m-dept-title">إضافة قسم جديد</div><button class="mc" onclick="closeModal('m-dept')">×</button></div>
+    <div class="mb">
+      <!-- Live Preview -->
+      <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:14px;border:1px solid var(--bg3)">
+        <div style="width:90px;height:100px;border-radius:14px;overflow:hidden;flex-shrink:0;border:1px solid var(--bg3);position:relative">
+          <img id="dp-prev-img" src="https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=180&q=80" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.background='var(--bg2)'">
+          <div style="position:absolute;bottom:0;left:0;right:0;height:36px;background:linear-gradient(transparent,rgba(10,22,40,.85));display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px">
+            <span id="dp-prev-lbl" style="font-size:10px;font-weight:700;color:white">اسم القسم</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--br);margin-bottom:6px">📱 معاينة البطاقة في التطبيق</div>
+          <div style="font-size:10px;color:var(--txt-l);line-height:1.8">الحجم المثالي: 300×300px<br>الصيغة: JPG أو PNG<br>الاسم يظهر أسفل الصورة</div>
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fw"><div class="fl">اسم القسم (عربي) *</div><input class="fi" id="dp-name-ar" placeholder="الأسنان" oninput="document.getElementById('dp-prev-lbl').textContent=this.value||'اسم القسم'"></div>
+        <div class="fw"><div class="fl">اسم القسم (English)</div><input class="fi" id="dp-name-en" placeholder="Dental"></div>
+        <div class="fw fc"><div class="fl">رابط الصورة (URL)</div><input class="fi" id="dp-img-url" placeholder="https://images.unsplash.com/..." oninput="updateDeptImg(this.value)"></div>
+        <div class="fw fc"><div class="fl">أو رفع صورة</div>
+          <div class="upload-zone" style="min-height:80px"><input type="file" accept="image/*" onchange="previewDeptFile(this)"><div class="uz-ico">📤</div><div class="uz-lbl">رفع صورة القسم</div><div class="uz-sub">JPG PNG · 300×300px</div></div>
+        </div>
+      </div>
+      <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-txt">لون التدرج الخلفي</div><div class="sdiv-line"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
+        <div class="fw"><div class="fl">اللون الأول</div><input type="color" class="fi" id="dp-clr1" value="#0A1628" style="height:40px;padding:2px 6px;cursor:pointer"></div>
+        <div class="fw"><div class="fl">اللون الثاني</div><input type="color" class="fi" id="dp-clr2" value="#1A3A6B" style="height:40px;padding:2px 6px;cursor:pointer"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="width:40px;height:28px;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#0A1628,#1A3A6B);border:2px solid transparent" onclick="setDeptClr('#0A1628','#1A3A6B',this)"></div>
+        <div style="width:40px;height:28px;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#0D2154,#1A4A8A);border:2px solid transparent" onclick="setDeptClr('#0D2154','#1A4A8A',this)"></div>
+        <div style="width:40px;height:28px;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#0A1840,#102060);border:2px solid transparent" onclick="setDeptClr('#0A1840','#102060',this)"></div>
+        <div style="width:40px;height:28px;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#0D1840,#1A2870);border:2px solid transparent" onclick="setDeptClr('#0D1840','#1A2870',this)"></div>
+        <div style="width:40px;height:28px;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#1a3020,#2a5030);border:2px solid transparent" onclick="setDeptClr('#1a3020','#2a5030',this)"></div>
+        <div style="width:40px;height:28px;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#201010,#401818);border:2px solid transparent" onclick="setDeptClr('#201010','#401818',this)"></div>
+      </div>
+      <div class="tog-wrap"><label class="tog"><input type="checkbox" checked id="dp-active"><div class="tog-track"></div><div class="tog-thumb"></div></label><span class="tog-lbl">عرض في التطبيق</span></div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-dept')">إلغاء</button><button class="btn btn-gold" onclick="saveDept()">💾 حفظ القسم</button></div>
+  </div>
+</div>
+
+<!-- BANNER MODAL -->
+<div class="ov" id="m-banner">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="m-banner-title">إضافة بنر جديد</div><button class="mc" onclick="closeModal('m-banner')">×</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fw fc"><div class="fl">عنوان البنر *</div><input class="fi" id="bn-title" placeholder="مثال: عروض رمضان الكريم"></div>
+        <div class="fw fc"><div class="fl">النص الفرعي</div><input class="fi" id="bn-sub" placeholder="مثال: خصومات تصل إلى 30%"></div>
+        <div class="fw fc"><div class="fl">التاق / الوسم</div><input class="fi" id="bn-tag" placeholder="مثال: قسم الأسنان 🦷"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-banner')">إلغاء</button><button class="btn btn-gold" onclick="saveBanner()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- BRANCH MODAL -->
+<div class="ov" id="m-branch">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="m-branch-title">إضافة فرع جديد</div><button class="mc" onclick="closeModal('m-branch')">×</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fw"><div class="fl">اسم الفرع *</div><input class="fi" id="br-name" placeholder="مثال: الرياض — حي النزهة"></div>
+        <div class="fw"><div class="fl">المدينة</div><select class="fs" id="br-city"><option>الرياض</option><option>جدة</option><option>الدمام</option><option>مكة المكرمة</option><option>المدينة المنورة</option></select></div>
+        <div class="fw fc"><div class="fl">العنوان التفصيلي</div><input class="fi" id="br-addr" placeholder="اسم الشارع، الحي، المدينة"></div>
+        <div class="fw"><div class="fl">رقم الهاتف</div><input class="fi" id="br-phone" placeholder="011-234-5678" type="tel"></div>
+        <div class="fw"><div class="fl">ساعات العمل</div><input class="fi" id="br-hours" placeholder="8 ص – 10 م"></div>
+        <div class="fw fc"><div class="fl">الأقسام المتاحة</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;padding:8px 0">
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" class="br-dept" value="أسنان" checked> الأسنان</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" class="br-dept" value="جلدية"> الجلدية</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" class="br-dept" value="عيون"> العيون</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" class="br-dept" value="تجميل"> التجميل</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-branch')">إلغاء</button><button class="btn btn-gold" onclick="saveBranch()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- NOTIF MODAL -->
+<div class="ov" id="m-notif">
+  <div class="modal">
+    <div class="mh"><div class="mt">إرسال إشعار جديد</div><button class="mc" onclick="closeModal('m-notif')">×</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fw fc"><div class="fl">عنوان الإشعار *</div><input class="fi" id="nt-title" placeholder="مثال: عرض خاص لك 🎁"></div>
+        <div class="fw fc"><div class="fl">نص الرسالة</div><textarea class="ft" id="nt-body" placeholder="اكتب رسالتك هنا..." style="height:70px"></textarea></div>
+        <div class="fw"><div class="fl">الجمهور</div><select class="fs" id="nt-aud"><option>كل العملاء</option><option>عملاء الأسنان</option><option>عملاء الجلدية</option><option>عملاء العيون</option></select></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-notif')">إلغاء</button><button class="btn btn-gold" onclick="saveNotif()">🚀 إرسال</button></div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="ov" id="m-admin">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="m-admin-title">إضافة مدير جديد</div><button class="mc" onclick="closeModal('m-admin')">×</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fw"><div class="fl">الاسم *</div><input class="fi" id="ad-name" placeholder="اسم المدير"></div>
+        <div class="fw"><div class="fl">البريد الإلكتروني *</div><input class="fi" id="ad-email" type="email" placeholder="email@basaffar.com"></div>
+        <div class="fw"><div class="fl">كلمة المرور *</div><input class="fi" id="ad-pass" type="password" placeholder="كلمة مرور قوية"></div>
+        <div class="fw"><div class="fl">الدور</div><select class="fs" id="ad-role"><option>مدير فرع</option><option>محرر محتوى</option><option>عارض فقط</option></select></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-admin')">إلغاء</button><button class="btn btn-gold" onclick="saveAdmin()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- BOOKING DETAIL MODAL -->
+<div class="ov" id="m-bk-detail">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="m-bk-detail-title">تفاصيل الحجز</div><button class="mc" onclick="closeModal('m-bk-detail')">×</button></div>
+    <div class="mb" id="m-bk-detail-body">
+      <div class="bk-info-row"><div class="bk-lbl">جاري التحميل...</div></div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-bk-detail')">إغلاق</button></div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="ov" id="m-del">
+  <div class="modal" style="max-width:380px">
+    <div class="mh" style="background:var(--red)"><div class="mt" style="color:white">تأكيد الحذف</div><button class="mc" onclick="closeModal('m-del')">×</button></div>
+    <div class="mb" style="text-align:center;padding:30px 20px">
+      <div style="font-size:44px;margin-bottom:14px">🗑️</div>
+      <div style="font-size:14px;font-weight:700;color:var(--br);margin-bottom:8px">هل أنت متأكد؟</div>
+      <div style="font-size:12px;color:var(--txt-l)" id="del-msg">سيتم حذف هذا العنصر نهائياً</div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('m-del')">إلغاء</button><button class="btn" style="background:var(--red);color:white" onclick="doDelete()">🗑️ حذف نهائياً</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ═══════════════════════════════════
+//  API CONFIG
+// ═══════════════════════════════════
+const API = 'http://localhost:3000/api';
+let _delCallback = null;
+let _editIds = {};
+let _data = { offers:[], doctors:[], depts:[], banners:[], branches:[], bookings:[], clients:[], notifs:[] };
+
+async function apiFetch(method, path, body) {
+  try {
+    const opts = { method, headers:{'Content-Type':'application/json'} };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(API + path, opts);
+    return await res.json();
+  } catch(e) {
+    console.warn('API', method, path, e.message);
+    return null;
+  }
+}
+const GET = p => apiFetch('GET', p);
+const POST = (p,b) => apiFetch('POST', p, b);
+const PUT = (p,b) => apiFetch('PUT', p, b);
+const DEL = p => apiFetch('DELETE', p);
+
+// ═══════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════
+function nav(pageId, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('act'));
+  document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('act'));
+  document.getElementById(pageId).classList.add('act');
+  if (el) el.classList.add('act');
+  const titles = {'pg-home':'لوحة المعلومات','pg-offers':'العروض','pg-doctors':'الأطباء','pg-depts':'الأقسام والصور','pg-banners':'البنرات','pg-branches':'الفروع','pg-bookings':'الحجوزات','pg-clients':'العملاء','pg-notifs':'الإشعارات','pg-settings':'الإعدادات','pg-admins':'المديرون'};
+  document.getElementById('tb-title').textContent = titles[pageId] || '';
+}
+
+// ═══════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════
+function openModal(id, title, isEdit, data) {
+  const t = document.getElementById(id+'-title');
+  if (t) t.textContent = title;
+  _editIds[id] = null;
+  if (isEdit && data) {
+    _editIds[id] = data.id;
+    if (id === 'm-offer') {
+      document.getElementById('of-name').value  = data.name  || '';
+      document.getElementById('of-price').value = data.price || '';
+      document.getElementById('of-price-orig').value = data.orig || data.price || '';
+      document.getElementById('of-desc').value  = data.desc  || '';
+      const d = document.getElementById('of-dept');
+      for (let o of d.options) if (o.text === data.dept) { o.selected = true; break; }
+    }
+    if (id === 'm-doctor') {
+      document.getElementById('dr-name').value = data.name || '';
+      document.getElementById('dr-spec').value = data.spec || '';
+      document.getElementById('dr-exp').value  = data.exp  || '';
+      document.getElementById('dr-bio').value  = data.bio  || '';
+    }
+    if (id === 'm-dept') {
+      document.getElementById('dp-name-ar').value = data.label || '';
+      document.getElementById('dp-name-en').value = data.labelEn || '';
+      document.getElementById('dp-img-url').value = data.image || '';
+      document.getElementById('dp-prev-lbl').textContent = data.label || 'اسم القسم';
+      if (data.image) document.getElementById('dp-prev-img').src = data.image;
+      if (data.color) {
+        document.getElementById('dp-clr1').value = data.color[0] || '#0A1628';
+        document.getElementById('dp-clr2').value = data.color[1] || '#1A3A6B';
+      }
+    }
+    if (id === 'm-branch') {
+      document.getElementById('br-name').value  = data.name  || '';
+      document.getElementById('br-addr').value  = data.addr  || '';
+      document.getElementById('br-phone').value = data.phone || '';
+      document.getElementById('br-hours').value = data.hours || '';
+    }
+  }
+  document.getElementById(id).classList.add('show');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+  _editIds[id] = null;
+}
+
+// ═══════════════════════════════════
+//  saveItem — ROUTER (fixes the error)
+// ═══════════════════════════════════
+function saveItem(modalId, label) {
+  const map = {
+    'm-offer':  saveOffer,
+    'm-doctor': saveDoctor,
+    'm-dept':   saveDept,
+    'm-banner': saveBanner,
+    'm-branch': saveBranch,
+    'm-admin':  saveAdmin,
+    'm-notif':  saveNotif,
+  };
+  if (map[modalId]) {
+    map[modalId]();
+  } else {
+    closeModal(modalId);
+    toast('✓ تم حفظ ' + label + ' بنجاح');
+  }
+}
+
+// ═══════════════════════════════════
+//  SAVE FUNCTIONS
+// ═══════════════════════════════════
+async function saveOffer() {
+  const name   = document.getElementById('of-name').value.trim();
+  const price  = document.getElementById('of-price').value.trim();
+  const orig   = document.getElementById('of-price-orig').value.trim();
+  const desc   = document.getElementById('of-desc').value.trim();
+  const deptEl = document.getElementById('of-dept');
+  const dept   = deptEl.options[deptEl.selectedIndex].text;
+  const active = document.getElementById('of-active').checked;
+  const icons  = {'الأسنان':'🦷','الجلدية':'✨','العيون':'👁️','التجميل':'💄'};
+
+  if (!name)  { shake('of-name');  toast('⚠️ يرجى إدخال اسم العرض'); return; }
+  if (!price) { shake('of-price'); toast('⚠️ يرجى إدخال السعر'); return; }
+
+  const payload = { name, price:Number(price), orig:Number(orig)||Number(price), desc, dept, icon:icons[dept]||'🎁', active };
+  const editId = _editIds['m-offer'];
+  let result;
+  if (editId) {
+    result = await PUT('/offers/'+editId, payload);
+    toast('✓ تم تحديث العرض "'+name+'"');
+  } else {
+    result = await POST('/offers', payload);
+    toast('✓ تمت إضافة العرض "'+name+'"');
+  }
+  closeModal('m-offer');
+  clearForm(['of-name','of-price','of-price-orig','of-desc']);
+  await loadOffers();
+  await loadStats();
+  addFeed('عرض: '+name, '#2463EB');
+}
+
+async function saveDoctor() {
+  const name = document.getElementById('dr-name').value.trim();
+  const spec = document.getElementById('dr-spec').value.trim();
+  const exp  = Number(document.getElementById('dr-exp').value) || 0;
+  const bio  = document.getElementById('dr-bio').value.trim();
+  if (!name) { shake('dr-name'); toast('⚠️ يرجى إدخال الاسم'); return; }
+
+  const deptEl = document.getElementById('dr-dept');
+  const dept = deptEl.options[deptEl.selectedIndex].text;
+  const emojis = ['👨‍⚕️','👩‍⚕️'];
+  const colors = [['#0A1628','#1A3A6B'],['#0D2154','#1A4A8A'],['#0A1840','#102060'],['#0D1840','#1A2870']];
+  const payload = { name, spec:spec||'طبيب متخصص', exp, bio, dept, emoji:emojis[Math.floor(Math.random()*2)], color:colors[Math.floor(Math.random()*4)], branches:['الرياض'], active:true };
+
+  const editId = _editIds['m-doctor'];
+  if (editId) {
+    await PUT('/doctors/'+editId, { name, spec, exp, bio });
+    toast('✓ تم تحديث "'+name+'"');
+  } else {
+    await POST('/doctors', payload);
+    toast('✓ تمت إضافة "'+name+'"');
+  }
+  closeModal('m-doctor');
+  clearForm(['dr-name','dr-spec','dr-exp','dr-bio']);
+  await loadDoctors();
+  addFeed('طبيب: '+name, '#2A8A45');
+}
+
+async function saveDept() {
+  const nameAr = document.getElementById('dp-name-ar').value.trim();
+  const nameEn = document.getElementById('dp-name-en').value.trim();
+  const img    = document.getElementById('dp-img-url').value.trim() || document.getElementById('dp-prev-img').src;
+  const c1     = document.getElementById('dp-clr1').value;
+  const c2     = document.getElementById('dp-clr2').value;
+  const active = document.getElementById('dp-active').checked;
+
+  if (!nameAr) { shake('dp-name-ar'); toast('⚠️ يرجى إدخال اسم القسم'); return; }
+
+  const payload = { label:nameAr, labelEn:nameEn||nameAr, image:img, color:[c1,c2], active, dept:nameAr };
+  const editId = _editIds['m-dept'];
+  if (editId) {
+    await PUT('/depts/'+editId, payload);
+    toast('✓ تم تحديث قسم "'+nameAr+'"');
+  } else {
+    await POST('/depts', payload);
+    toast('✓ تمت إضافة القسم "'+nameAr+'"');
+  }
+  closeModal('m-dept');
+  clearForm(['dp-name-ar','dp-name-en','dp-img-url']);
+  document.getElementById('dp-prev-lbl').textContent = 'اسم القسم';
+  await loadDepts();
+}
+
+async function saveBanner() {
+  const title = document.getElementById('bn-title').value.trim();
+  const sub   = document.getElementById('bn-sub').value.trim();
+  const tag   = document.getElementById('bn-tag').value.trim();
+  if (!title) { shake('bn-title'); toast('⚠️ يرجى إدخال عنوان البنر'); return; }
+  const editId = _editIds['m-banner'];
+  if (editId) {
+    await PUT('/banners/'+editId, { title, subtitle:sub, tag, active:true });
+    toast('✓ تم تحديث البنر "'+title+'"');
+  } else {
+    await POST('/banners', { title, subtitle:sub, tag, color:['#0A1628','#1A3A6B'], active:true, order:99 });
+    toast('✓ تمت إضافة البنر "'+title+'"');
+  }
+  closeModal('m-banner');
+  clearForm(['bn-title','bn-sub','bn-tag']);
+  await loadBanners();
+}
+
+async function saveBranch() {
+  const name  = document.getElementById('br-name').value.trim();
+  const city  = document.getElementById('br-city').value;
+  const addr  = document.getElementById('br-addr').value.trim();
+  const phone = document.getElementById('br-phone').value.trim();
+  const hours = document.getElementById('br-hours').value.trim() || '9 ص – 9 م';
+  if (!name) { shake('br-name'); toast('⚠️ يرجى إدخال اسم الفرع'); return; }
+  const depts = Array.from(document.querySelectorAll('.br-dept:checked')).map(c=>c.value);
+  const editId = _editIds['m-branch'];
+  if (editId) {
+    await PUT('/branches/'+editId, { name, city, addr, phone, hours, depts });
+    toast('✓ تم تحديث فرع "'+name+'"');
+  } else {
+    await POST('/branches', { name, city, addr, phone, hours, depts, open:true, active:true });
+    toast('✓ تمت إضافة الفرع "'+name+'"');
+  }
+  closeModal('m-branch');
+  clearForm(['br-name','br-addr','br-phone','br-hours']);
+  await loadBranches();
+}
+
+async function saveAdmin() {
+  const name  = document.getElementById('ad-name').value.trim();
+  const email = document.getElementById('ad-email').value.trim();
+  const pass  = document.getElementById('ad-pass').value.trim();
+  const role  = document.getElementById('ad-role').value;
+  if (!name)  { shake('ad-name');  toast('⚠️ يرجى إدخال الاسم');  return; }
+  if (!email) { shake('ad-email'); toast('⚠️ يرجى إدخال البريد'); return; }
+  if (!pass)  { shake('ad-pass');  toast('⚠️ يرجى إدخال كلمة المرور'); return; }
+
+  const ini = name.split(' ').map(w=>w[0]).join('').substring(0,2);
+  const colors = ['#2463EB','#2A8A45','#C47A20'];
+  const col = colors[Math.floor(Math.random()*colors.length)];
+  const roleClass = role==='مدير فرع'?'blu':role==='محرر محتوى'?'gold':'gray';
+  const tbl = document.getElementById('admins-tbl');
+  const row = document.createElement('tr');
+  row.innerHTML=`<td><div class="sb-av" style="background:${col}">${ini}</div></td><td><b>${name}</b></td><td>${email}</td><td><span class="bx ${roleClass}">${role}</span></td><td>الآن</td><td><span class="bx grn">نشط</span></td><td><button class="btn btn-red btn-xs" onclick="confirmDel('${name}')">🗑️</button></td>`;
+  tbl.appendChild(row);
+  closeModal('m-admin');
+  clearForm(['ad-name','ad-email','ad-pass']);
+  toast('✓ تمت إضافة المدير "'+name+'"');
+}
+
+async function saveNotif() {
+  const title = document.getElementById('nt-title').value.trim();
+  const body  = document.getElementById('nt-body').value.trim();
+  const aud   = document.getElementById('nt-aud').value;
+  if (!title) { shake('nt-title'); toast('⚠️ يرجى إدخال العنوان'); return; }
+  const result = await POST('/notifications', { title, body, audience:aud });
+  clearForm(['nt-title','nt-body']);
+  closeModal('m-notif');
+  await loadNotifs();
+  toast('✓ تم إرسال الإشعار لـ '+(_data.clients.length||1284)+' مستخدم');
+}
+
+async function saveSettings() {
+  const payload = {
+    appNameAr: document.getElementById('set-name-ar')?.value,
+    appNameEn: document.getElementById('set-name-en')?.value,
+    tagline:   document.getElementById('set-tagline')?.value,
+    phone:     document.getElementById('set-phone')?.value,
+    email:     document.getElementById('set-email')?.value,
+    website:   document.getElementById('set-web')?.value,
+  };
+  await PUT('/settings', payload);
+  toast('✓ تم حفظ الإعدادات');
+}
+
+async function sendQuickNotif() {
+  const title = document.getElementById('quick-notif-title').value.trim();
+  const body  = document.getElementById('quick-notif-body').value.trim();
+  const aud   = document.getElementById('quick-notif-aud').value;
+  if (!title) { shake('quick-notif-title'); toast('⚠️ يرجى إدخال العنوان'); return; }
+  await POST('/notifications', { title, body, audience:aud });
+  document.getElementById('quick-notif-title').value = '';
+  document.getElementById('quick-notif-body').value = '';
+  await loadNotifs();
+  toast('✓ تم إرسال الإشعار');
+}
+
+// ═══════════════════════════════════
+//  DELETE
+// ═══════════════════════════════════
+function confirmDel(name, cb) {
+  document.getElementById('del-msg').textContent = 'سيتم حذف "'+name+'" نهائياً ولا يمكن التراجع.';
+  _delCallback = cb || null;
+  document.getElementById('m-del').classList.add('show');
+}
+function doDelete() {
+  closeModal('m-del');
+  if (_delCallback) { _delCallback(); _delCallback = null; }
+}
+
+// ═══════════════════════════════════
+//  LOAD DATA FROM API
+// ═══════════════════════════════════
+async function loadAll() {
+  await Promise.all([loadStats(), loadOffers(), loadDoctors(), loadDepts(), loadBanners(), loadBranches(), loadBookings(), loadClients(), loadNotifs()]);
+}
+
+async function loadStats() {
+  const d = await GET('/stats');
+  if (!d) return;
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('s-bookings', d.bookingsToday || 0);
+  set('s-sales',    (d.bookingsToday||0) * 1200 + ' ﷼');
+  set('s-clients',  d.clientsTotal  || 0);
+  set('s-offers',   d.offersActive  || 0);
+  const bc = document.getElementById('bk-cnt');
+  if (bc) bc.textContent = d.pendingBookings || 0;
+}
+
+async function loadOffers() {
+  const d = await GET('/offers');
+  if (!d) return;
+  _data.offers = d;
+  const tbl = document.getElementById('offers-tbl');
+  if (!tbl) return;
+  const header = '<tr><th></th><th>أيقونة</th><th>اسم العرض</th><th>القسم</th><th>السعر الأصلي</th><th>السعر بعد الخصم</th><th>الحالة</th><th>إجراءات</th></tr>';
+  const deptClass = {أسنان:'gold',جلدية:'blu',عيون:'gray',تجميل:'red'};
+  const rows = d.map(o => `<tr data-dept="${o.dept}">
+    <td><input type="checkbox"></td>
+    <td><div class="tbl-img">${o.icon||'🎁'}</div></td>
+    <td><div class="tbl-name">${o.name}</div><div class="tbl-sub">${o.dept}</div></td>
+    <td><span class="bx ${deptClass[o.dept]||'gray'}">${o.dept}</span></td>
+    <td style="text-decoration:line-through;color:var(--txt-l)">${o.orig||o.price} ﷼</td>
+    <td style="font-weight:700;color:var(--gold-d)">${o.price} ﷼</td>
+    <td>${o.active!==false?'<span class="bx grn">● نشط</span>':'<span class="bx amb">● متوقف</span>'}</td>
+    <td><div style="display:flex;gap:6px">
+      <button class="btn btn-out btn-xs" onclick="openModal('m-offer','تعديل العرض',true,${JSON.stringify(o).replace(/"/g,"'")})">✏️</button>
+      <button class="btn btn-red btn-xs" onclick="confirmDel('${o.name}',async()=>{await DEL('/offers/${o.id}');await loadOffers();await loadStats();toast('✓ تم الحذف');})">🗑️</button>
+      <button class="btn btn-out btn-xs" onclick="toggleActive('offers','${o.id}',${!o.active})">>${o.active!==false?'⏸️':'▶️'}</button>
+    </div></td>
+  </tr>`).join('');
+  tbl.innerHTML = header + (rows || '<tr><td colspan="8" style="text-align:center;color:var(--txt-l);padding:20px">لا توجد عروض</td></tr>');
+  // update home table
+  const ht = document.getElementById('home-bookings-tbl');
+  if (ht && _data.bookings.length) renderHomeBookings();
+}
+
+async function loadDoctors() {
+  const d = await GET('/doctors');
+  if (!d) return;
+  _data.doctors = d;
+  const grid = document.getElementById('doctors-grid');
+  if (!grid) return;
+  const addCard = grid.lastElementChild;
+  while (grid.children.length > 1) grid.firstElementChild.remove();
+  d.forEach(doc => {
+    const card = document.createElement('div');
+    card.className='card'; card.style.margin='0';
+    const bg = `linear-gradient(135deg,${doc.color?doc.color[0]:'#0A1628'},${doc.color?doc.color[1]:'#1A3A6B'})`;
+    card.innerHTML=`
+      <div style="height:90px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:46px">${doc.emoji||'👨‍⚕️'}</div>
+      <div class="card-b">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
+          <div><div style="font-size:13px;font-weight:700;color:var(--br)">${doc.name}</div><div style="font-size:10px;color:var(--txt-l)">${doc.spec||''} · ${doc.exp||'?'} سنة</div></div>
+          <span class="bx grn">نشط</span>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${(doc.branches||[]).map(b=>`<span class="bx gold">${b}</span>`).join('')}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-gold btn-sm" style="flex:1" onclick="openModal('m-doctor','تعديل الطبيب',true,${JSON.stringify(doc).replace(/"/g,"'")})">✏️ تعديل</button>
+          <button class="btn btn-red btn-sm" onclick="confirmDel('${doc.name}',async()=>{await DEL('/doctors/${doc.id}');await loadDoctors();toast('✓ تم الحذف');})">🗑️</button>
+        </div>
+      </div>`;
+    grid.insertBefore(card, addCard);
+  });
+}
+
+async function loadDepts() {
+  const d = await GET('/depts');
+  if (!d) return;
+  _data.depts = d;
+  // Render preview row
+  const prev = document.getElementById('dept-preview-row');
+  if (prev) {
+    prev.innerHTML = d.filter(x=>x.active).map(dep=>`
+      <div style="width:120px;border-radius:14px;overflow:hidden;flex-shrink:0;border:1px solid var(--bg3);cursor:pointer" onclick="openModal('m-dept','تعديل ${dep.label}',true,${JSON.stringify(dep).replace(/"/g,"'")})">
+        <div style="position:relative;height:130px;background:linear-gradient(135deg,${dep.color?dep.color[0]:'#0A1628'},${dep.color?dep.color[1]:'#1A3A6B'})">
+          <img src="${dep.image||''}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display='none'">
+          <div style="position:absolute;bottom:0;left:0;right:0;height:44px;background:linear-gradient(transparent,rgba(10,22,40,.85));display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px">
+            <span style="font-size:11px;font-weight:700;color:white">${dep.label}</span>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+  // Render table
+  const tbl = document.getElementById('depts-tbl');
+  if (!tbl) return;
+  const header = '<tr><th>صورة القسم</th><th>اسم القسم</th><th>الحالة</th><th>إجراءات</th></tr>';
+  const rows = d.map(dep=>`<tr>
+    <td><div class="dept-thumb"><img src="${dep.image||''}" onerror="this.style.display='none'"><div class="dept-thumb-lbl">${dep.label}</div></div></td>
+    <td><div class="tbl-name">${dep.label}</div><div class="tbl-sub">${dep.labelEn||''}</div></td>
+    <td>${dep.active?'<span class="bx grn">● نشط</span>':'<span class="bx amb">● متوقف</span>'}</td>
+    <td><div style="display:flex;gap:6px">
+      <button class="btn btn-gold btn-xs" onclick="openModal('m-dept','تعديل ${dep.label}',true,${JSON.stringify(dep).replace(/"/g,"'")})">✏️ تعديل</button>
+      <button class="btn btn-out btn-xs" onclick="toggleActive('depts','${dep.id}',${!dep.active})>${dep.active?'⏸️':'▶️'}</button>
+      <button class="btn btn-red btn-xs" onclick="confirmDel('${dep.label}',async()=>{await DEL('/depts/${dep.id}');await loadDepts();toast('✓ تم الحذف');})">🗑️</button>
+    </div></td>
+  </tr>`).join('');
+  tbl.innerHTML = header + (rows || '<tr><td colspan="4" style="text-align:center;color:var(--txt-l);padding:20px">لا توجد أقسام</td></tr>');
+}
+
+async function loadBanners() {
+  const d = await GET('/banners');
+  if (!d) return;
+  _data.banners = d;
+  const list = document.getElementById('banners-list');
+  if (!list) return;
+  list.innerHTML = d.map(b=>`
+    <div class="banner-item">
+      <div class="banner-thumb" style="background:linear-gradient(135deg,${b.color?b.color[0]:'#0A1628'},${b.color?b.color[1]:'#1A3A6B'})">🖼️</div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--br)">${b.title}</div><div style="font-size:10px;color:var(--txt-l)">${b.subtitle||''}</div></div>
+      <div style="display:flex;gap:6px">
+        <span class="bx grn">نشط</span>
+        <button class="btn btn-out btn-xs" onclick="openModal('m-banner','تعديل البنر',true,${JSON.stringify(b).replace(/"/g,"'")})">✏️</button>
+        <button class="btn btn-red btn-xs" onclick="confirmDel('${b.title}',async()=>{await DEL('/banners/${b.id}');await loadBanners();toast('✓ تم الحذف');})">🗑️</button>
+      </div>
+    </div>`).join('') || '<p style="color:var(--txt-l);text-align:center;padding:20px">لا توجد بنرات</p>';
+}
+
+async function loadBranches() {
+  const d = await GET('/branches');
+  if (!d) return;
+  _data.branches = d;
+  const grid = document.getElementById('branches-grid');
+  if (!grid) return;
+  grid.innerHTML = d.map(b=>`
+    <div class="card" style="margin:0">
+      <div style="height:70px;background:linear-gradient(135deg,#0A1628,#1A3A6B);display:flex;align-items:center;justify-content:center;font-size:28px">🗺️</div>
+      <div class="card-b">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span class="bx ${b.open?'grn':'red'}">${b.open?'مفتوح':'مغلق'}</span>
+          <div style="font-size:13px;font-weight:700;color:var(--br)">${b.name}</div>
+        </div>
+        <div style="font-size:11px;color:var(--txt-l);margin-bottom:3px;text-align:right">📍 ${b.addr||b.city||''}</div>
+        <div style="font-size:11px;color:var(--txt-m);margin-bottom:8px;text-align:right">📞 ${b.phone||'—'}</div>
+        <div style="font-size:10px;font-weight:700;color:${b.open?'var(--grn)':'var(--red)'};margin-bottom:10px;text-align:right">⏰ ${b.hours||'—'}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:10px">
+          ${(b.depts||[]).map(dep=>`<span class="bx gold">${dep}</span>`).join('')}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-gold btn-sm" style="flex:1" onclick="openModal('m-branch','تعديل الفرع',true,${JSON.stringify(b).replace(/"/g,"'")})">✏️ تعديل</button>
+          <button class="btn btn-red btn-sm" onclick="confirmDel('${b.name}',async()=>{await DEL('/branches/${b.id}');await loadBranches();toast('✓ تم الحذف');})">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('') + `
+    <div class="card" style="margin:0;cursor:pointer" onclick="openModal('m-branch','إضافة فرع جديد',false)">
+      <div style="height:70px;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><span style="font-size:22px;opacity:.3">+</span><span style="font-size:11px;color:var(--txt-l)">إضافة فرع</span></div>
+      <div class="card-b" style="text-align:center"><button class="btn btn-gold" onclick="openModal('m-branch','إضافة فرع جديد',false)">+ إضافة</button></div>
+    </div>`;
+}
+
+async function loadBookings() {
+  const d = await GET('/bookings');
+  if (!d) return;
+  _data.bookings = d;
+  renderBookingsTable(d);
+  renderHomeBookings();
+}
+function renderBookingsTable(d) {
+  const tbl = document.getElementById('bookings-tbl');
+  if (!tbl) return;
+  const statusM = {pending:'<span class="bx amb">جديد</span>',confirmed:'<span class="bx grn">مؤكد</span>',cancelled:'<span class="bx red">ملغى</span>',done:'<span class="bx blu">مكتمل</span>'};
+  const header = '<tr><th>رقم الحجز</th><th>العميل</th><th>الهاتف</th><th>العرض</th><th>الفرع</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th></tr>';
+  const rows = (d||_data.bookings).slice(0,50).map(b=>`<tr>
+    <td style="font-weight:700;color:var(--gold-d)">${b.code||'—'}</td>
+    <td><b>${b.name}</b></td><td>${b.phone}</td>
+    <td>${b.offer||'—'}</td><td>${b.branch||'—'}</td><td>${b.date||'—'}</td>
+    <td>${statusM[b.status]||statusM.pending}</td>
+    <td><div style="display:flex;gap:5px">
+      ${b.status==='pending'?`<button class="btn btn-grn btn-xs" onclick="updateBooking(${b.id},'confirmed')">✓</button>`:''}
+      <button class="btn btn-out btn-xs" onclick="viewBooking(${b.id})">👁️</button>
+      <button class="btn btn-red btn-xs" onclick="updateBooking(${b.id},'cancelled')">✕</button>
+    </div></td>
+  </tr>`).join('');
+  tbl.innerHTML = header + (rows || '<tr><td colspan="8" style="text-align:center;color:var(--txt-l);padding:20px">لا توجد حجوزات</td></tr>');
+}
+function renderHomeBookings() {
+  const tbl = document.getElementById('home-bookings-tbl');
+  if (!tbl) return;
+  const statusM = {pending:'<span class="bx amb">جديد</span>',confirmed:'<span class="bx grn">مؤكد</span>',cancelled:'<span class="bx red">ملغى</span>'};
+  const header = '<tr><th>العميل</th><th>العرض</th><th>الفرع</th><th>الحالة</th></tr>';
+  const rows = _data.bookings.slice(0,5).map(b=>`<tr><td><b>${b.name}</b></td><td>${b.offer||'—'}</td><td>${b.branch||'—'}</td><td>${statusM[b.status]||statusM.pending}</td></tr>`).join('');
+  tbl.innerHTML = header + (rows || '<tr><td colspan="4" style="text-align:center;color:var(--txt-l);padding:20px">لا توجد حجوزات بعد</td></tr>');
+}
+
+async function updateBooking(id, status) {
+  await PUT('/bookings/'+id, { status });
+  await loadBookings();
+  await loadStats();
+  toast('✓ تم تحديث الحجز');
+}
+function viewBooking(id) {
+  const b = _data.bookings.find(x=>x.id===id);
+  if (!b) return;
+  document.getElementById('m-bk-detail-title').textContent = 'تفاصيل الحجز '+(b.code||'');
+  const fields = [['رقم الحجز',`<span style="color:var(--gold-d);font-weight:700">${b.code||'—'}</span>`],['العميل',b.name],['الهاتف',b.phone],['الهوية',b.idNum||'—'],['العرض',b.offer||'—'],['الفرع',b.branch||'—'],['التاريخ',b.date||'—'],['الحالة',b.status],['ملاحظات',b.note||'لا يوجد']];
+  document.getElementById('m-bk-detail-body').innerHTML = fields.map(([l,v])=>`<div class="bk-info-row"><div class="bk-lbl">${l}</div><div class="bk-val">${v}</div></div>`).join('') +
+  `<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-grn" style="flex:1" onclick="updateBooking(${id},'confirmed');closeModal('m-bk-detail')">✓ تأكيد</button><button class="btn btn-red" style="flex:1" onclick="updateBooking(${id},'cancelled');closeModal('m-bk-detail')">✕ إلغاء</button></div>`;
+  document.getElementById('m-bk-detail').classList.add('show');
+}
+
+async function loadClients() {
+  const d = await GET('/clients');
+  if (!d) return;
+  _data.clients = d;
+  const tbl = document.getElementById('clients-tbl');
+  if (!tbl) return;
+  const header = '<tr><th>الاسم</th><th>الهاتف</th><th>الجنسية</th><th>العمر</th><th>الحجوزات</th><th>تاريخ التسجيل</th></tr>';
+  const rows = d.map(c=>`<tr><td><div class="tbl-name">${c.name}</div><div class="tbl-sub">${c.phone}</div></td><td>${c.phone}</td><td>${c.nationality||'—'}</td><td>${c.age||'—'}</td><td><span class="bx gold">${c.bookings||0} حجز</span></td><td>${(c.joinedAt||'').slice(0,10)||'—'}</td></tr>`).join('');
+  tbl.innerHTML = header + (rows || '<tr><td colspan="6" style="text-align:center;color:var(--txt-l);padding:20px">لا يوجد عملاء بعد</td></tr>');
+}
+
+async function loadNotifs() {
+  const d = await GET('/notifications');
+  if (!d) return;
+  _data.notifs = d;
+  const tbl = document.getElementById('notifs-tbl');
+  if (!tbl) return;
+  const header = '<tr><th>العنوان</th><th>الجمهور</th><th>الوصول</th><th>التاريخ</th></tr>';
+  const rows = d.map(n=>`<tr><td><b>${n.title}</b></td><td>${n.audience||'الكل'}</td><td><span class="bx grn">${n.reach||'—'}</span></td><td>${(n.sentAt||'').slice(0,10)}</td></tr>`).join('');
+  tbl.innerHTML = header + (rows || '<tr><td colspan="4" style="text-align:center;color:var(--txt-l);padding:20px">لا توجد إشعارات بعد</td></tr>');
+}
+
+// ═══════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════
+async function toggleActive(section, id, newState) {
+  await PUT('/'+section+'/'+id, { active: newState });
+  if (section === 'offers') { await loadOffers(); await loadStats(); }
+  if (section === 'depts')  await loadDepts();
+  toast('✓ تم تغيير الحالة');
+}
+
+function filterTbl(input, tableId) {
+  const q = input.value.toLowerCase();
+  document.querySelectorAll('#'+tableId+' tr:not(:first-child)').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function setTab(el, tabsId, val) {
+  document.querySelectorAll('#'+tabsId+' .tab').forEach(t => t.classList.remove('act'));
+  el.classList.add('act');
+  if (tabsId === 'off-tabs') {
+    document.querySelectorAll('#offers-tbl tr:not(:first-child)').forEach(row => {
+      row.style.display = (val === 'الكل' || row.dataset.dept === val) ? '' : 'none';
+    });
+  }
+}
+
+function shake(id) {
+  const el = typeof id === 'string' ? document.getElementById(id) : id;
+  if (!el) return;
+  el.style.borderColor = 'var(--red)';
+  el.style.animation = 'shake .35s ease';
+  el.focus();
+  setTimeout(() => { el.style.borderColor = ''; el.style.animation = ''; }, 1400);
+}
+
+function clearForm(ids) {
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+}
+
+function addFeed(text, color) {
+  const feed = document.getElementById('feed-list');
+  if (!feed) return;
+  const item = document.createElement('div');
+  item.className = 'feed-item';
+  item.innerHTML = `<div class="feed-dot" style="background:${color}"></div><div><div class="feed-text">${text}</div><div class="feed-time">الآن</div></div>`;
+  feed.insertBefore(item, feed.firstChild);
+  while (feed.children.length > 8) feed.removeChild(feed.lastChild);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Dept helpers
+function updateDeptImg(url) {
+  if (url) document.getElementById('dp-prev-img').src = url;
+}
+function previewDeptFile(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('dp-prev-img').src = e.target.result;
+    document.getElementById('dp-img-url').value = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function setDeptClr(c1, c2, el) {
+  document.getElementById('dp-clr1').value = c1;
+  document.getElementById('dp-clr2').value = c2;
+}
+
+// API status
+async function checkApi() {
+  const dot = document.getElementById('api-dot');
+  const lbl = document.getElementById('api-lbl');
+  try {
+    const res = await fetch(API+'/ping', { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      dot.style.background = 'var(--grn)';
+      lbl.textContent = 'API متصل ✓';
+      lbl.style.color = 'var(--grn)';
+      return true;
+    }
+  } catch(e) {}
+  dot.style.background = 'var(--red)';
+  lbl.textContent = 'API غير متصل';
+  lbl.style.color = 'var(--red)';
+  return false;
+}
+
+// Clock
+function tick() {
+  const n = new Date();
+  const h = n.getHours() % 12 || 12;
+  const m = String(n.getMinutes()).padStart(2,'0');
+  const ap = n.getHours() >= 12 ? 'م' : 'ص';
+  const c = document.getElementById('clk');
+  if (c) c.textContent = `${h}:${m} ${ap}`;
+}
+tick(); setInterval(tick, 20000);
+
+// Chart
+function drawChart() {
+  const data = [32,28,45,38,51,44,47];
+  const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const max = Math.max(...data);
+  const c = document.getElementById('chart1');
+  if (!c) return;
+  c.innerHTML = data.map((v,i)=>`
+    <div class="bar-col">
+      <div class="bar" style="height:${(v/max)*120}px;background:${i===6?'var(--gold)':'rgba(36,99,235,.4)'}"></div>
+      <div class="bar-lbl">${days[i].substring(0,3)}</div>
+    </div>`).join('');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.ov').forEach(ov => ov.addEventListener('click', function(e){
+  if (e.target === this) this.classList.remove('show');
+}));
+
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+  drawChart();
+  const ok = await checkApi();
+  if (ok) {
+    await loadAll();
+  } else {
+  
