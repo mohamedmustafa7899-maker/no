@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 // ═══════════════════════════════════════
 // عند التشغيل على جوالك عبر Expo Go:
 // استبدل localhost بـ IP جهازك مثل: http://192.168.1.5:3000/api
-const API_URL = 'http://localhost:3000/api';
+const API_URL = ' http://YOUR_IP:3000/api';
 
 async function apiFetch(path) {
   try {
