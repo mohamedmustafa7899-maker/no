@@ -7,6 +7,8 @@ import {
 import { LinearGradient } from './LinearGradient';
 
 const API_URL = '/api';
+const TOKEN_KEY = 'basaffar_auth_token';
+const USER_KEY  = 'basaffar_auth_user';
 
 const webAlert = (title, msg, buttons) => {
   if (Platform.OS === 'web') {
@@ -25,9 +27,29 @@ const webAlert = (title, msg, buttons) => {
   }
 };
 
+function getStoredToken() {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
+function storeAuth(token, user) {
+  try {
+    if (token) { localStorage.setItem(TOKEN_KEY, token); localStorage.setItem(USER_KEY, JSON.stringify(user)); }
+    else { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); }
+  } catch {}
+}
+function getStoredUser() {
+  try { const u = localStorage.getItem(USER_KEY); return u ? JSON.parse(u) : null; } catch { return null; }
+}
+
+function authHeaders() {
+  const token = getStoredToken();
+  return token
+    ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+    : { 'Content-Type': 'application/json' };
+}
+
 async function apiFetch(path) {
   try {
-    const res = await fetch(API_URL + path, { headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch(API_URL + path, { headers: authHeaders() });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
   } catch (e) {
@@ -39,12 +61,25 @@ async function apiPost(path, body) {
   try {
     const res = await fetch(API_URL + path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(body),
     });
     return await res.json();
   } catch (e) {
     console.warn('[API POST]', path, e.message);
+    return null;
+  }
+}
+async function apiPut(path, body) {
+  try {
+    const res = await fetch(API_URL + path, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('[API PUT]', path, e.message);
     return null;
   }
 }
@@ -102,8 +137,10 @@ export default function App() {
   const [param,  setParam]  = useState(null);
   const [tab,    setTab]    = useState('home');
   const [cart,   setCart]   = useState([]);
-  const [loggedIn,  setLoggedIn]  = useState(false);
-  const [userName,  setUserName]  = useState('');
+  const [loggedIn,      setLoggedIn]      = useState(false);
+  const [userName,      setUserName]      = useState('');
+  const [userEmail,     setUserEmail]     = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
 
   const [apiDepts,   setApiDepts]   = useState(DEPTS);
   const [apiOffers,  setApiOffers]  = useState(OFFERS);
@@ -113,6 +150,29 @@ export default function App() {
   const [apiLoaded,  setApiLoaded]  = useState(false);
 
   useEffect(() => {
+    // Restore auth state from localStorage
+    const stored = getStoredUser();
+    const token  = getStoredToken();
+    if (stored && token) {
+      setLoggedIn(true);
+      setUserName(stored.name || '');
+      setUserEmail(stored.email || '');
+      setEmailVerified(stored.emailVerified || false);
+      // Verify token is still valid with server
+      apiFetch('/auth/me').then(res => {
+        if (res?.ok) {
+          setUserName(res.user.name);
+          setUserEmail(res.user.email);
+          setEmailVerified(res.user.emailVerified);
+          storeAuth(token, res.user);
+        } else {
+          // Token expired or invalid — log out
+          storeAuth(null, null);
+          setLoggedIn(false); setUserName(''); setUserEmail(''); setEmailVerified(false);
+        }
+      });
+    }
+
     const loadData = async () => {
       const [depts, offers, doctors, banners, branches] = await Promise.all([
         apiFetch('/depts'),
@@ -131,6 +191,18 @@ export default function App() {
     loadData();
   }, []);
 
+  const handleLogin = (user, token) => {
+    storeAuth(token, user);
+    setLoggedIn(true);
+    setUserName(user.name || '');
+    setUserEmail(user.email || '');
+    setEmailVerified(user.emailVerified || false);
+  };
+  const handleLogout = () => {
+    storeAuth(null, null);
+    setLoggedIn(false); setUserName(''); setUserEmail(''); setEmailVerified(false);
+  };
+
   const go = (s, p=null) => { setScreen(s); setParam(p); };
   const goTab = (t) => { setScreen('tabs'); setTab(t); };
 
@@ -142,10 +214,11 @@ export default function App() {
   if (screen==='splash') return <Splash onDone={()=>go('tabs')} />;
   if (screen==='offerDetail') return <OfferDetail offer={param} onBack={()=>go('tabs')} onAdd={(o,q,b)=>{addToCart(o,q,b);goTab('cart');}} />;
   if (screen==='doctorDetail') return <DoctorDetail doctor={param} onBack={()=>go('tabs')} onBook={()=>goTab('booking')} />;
-  if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} onLogin={(n)=>{setLoggedIn(true);setUserName(n);go('tabs');}} onRegister={()=>go('register')} />;
-  if (screen==='register') return <RegisterScreen onBack={()=>go('login')} onDone={(n)=>{setLoggedIn(true);setUserName(n);go('tabs');}} />;
+  if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} onLogin={(user,token)=>{handleLogin(user,token);go('tabs');}} onRegister={()=>go('register')} onForgot={()=>go('forgotPassword')} />;
+  if (screen==='register') return <RegisterScreen onBack={()=>go('login')} onDone={(user,token)=>{handleLogin(user,token);go('tabs');}} />;
+  if (screen==='forgotPassword') return <ForgotPasswordScreen onBack={()=>go('login')} />;
   if (screen==='branches') return <BranchesScreen onBack={()=>go('tabs')} branches={apiBranches} />;
-  if (screen==='profile') return <ProfileScreen onBack={()=>go('tabs')} userName={userName} />;
+  if (screen==='profile') return <ProfileScreen onBack={()=>go('tabs')} userName={userName} userEmail={userEmail} emailVerified={emailVerified} onVerifiedUpdate={()=>setEmailVerified(true)} />;
   if (screen==='myBookings') return <MyBookingsScreen onBack={()=>go('tabs')} loggedIn={loggedIn} onLogin={()=>go('login')} />;
   if (screen==='balance') return <BalanceScreen onBack={()=>go('tabs')} />;
   if (screen==='invoices') return <InvoicesScreen onBack={()=>go('tabs')} loggedIn={loggedIn} onLogin={()=>go('login')} />;
@@ -163,7 +236,7 @@ export default function App() {
       {tab==='offers'  && <OffersScreen  onOffer={o=>go('offerDetail',o)} offers={apiOffers} />}
       {tab==='cart'    && <CartScreen    cart={cart} remove={removeFromCart} loggedIn={loggedIn} onLogin={()=>go('login')} clear={clearCart} />}
       {tab==='booking' && <BookingScreen loggedIn={loggedIn} onLogin={()=>go('login')} branches={apiBranches} />}
-      {tab==='more'    && <MoreScreen    loggedIn={loggedIn} userName={userName} onLogin={()=>go('login')} onBranches={()=>go('branches')} onProfile={()=>go('profile')} onLogout={()=>{setLoggedIn(false);setUserName('');}} onBookings={()=>go('myBookings')} onBalance={()=>go('balance')} onInvoices={()=>go('invoices')} onServices={()=>go('services')} onNotifications={()=>go('notifications')} onGuide={()=>go('guide')} onAbout={()=>go('about')} onContact={()=>go('contact')} onPrivacy={()=>go('privacy')} />}
+      {tab==='more'    && <MoreScreen    loggedIn={loggedIn} userName={userName} userEmail={userEmail} emailVerified={emailVerified} onLogin={()=>go('login')} onBranches={()=>go('branches')} onProfile={()=>go('profile')} onLogout={handleLogout} onBookings={()=>go('myBookings')} onBalance={()=>go('balance')} onInvoices={()=>go('invoices')} onServices={()=>go('services')} onNotifications={()=>go('notifications')} onGuide={()=>go('guide')} onAbout={()=>go('about')} onContact={()=>go('contact')} onPrivacy={()=>go('privacy')} />}
       <BottomNav tab={tab} setTab={setTab} badge={cart.length} />
     </View>
   );
@@ -613,8 +686,17 @@ const B=StyleSheet.create({
   optT:{flex:1,fontSize:12,color:C.txtM,textAlign:'right'},
 });
 
-function MoreScreen({loggedIn,userName,onLogin,onBranches,onProfile,onLogout,onBookings,onBalance,onInvoices,onServices,onNotifications,onGuide,onAbout,onContact,onPrivacy}){
+function MoreScreen({loggedIn,userName,userEmail,emailVerified,onLogin,onBranches,onProfile,onLogout,onBookings,onBalance,onInvoices,onServices,onNotifications,onGuide,onAbout,onContact,onPrivacy}){
   const [lang,setLang]=useState('ar');
+  const [resendSent,setResendSent]=useState(false);
+  const [resending,setResending]=useState(false);
+  const resendVerification=async()=>{
+    if(!userEmail||resending) return;
+    setResending(true);
+    await apiPost('/auth/resend-verification',{email:userEmail});
+    setResending(false);
+    setResendSent(true);
+  };
   const rows=[
     {i:'👤',l:'البيانات الشخصية',s:'تعديل معلوماتك',p:onProfile},
     {i:'📋',l:'حجوزاتي',s:'عرض المواعيد',p:onBookings},
@@ -636,7 +718,13 @@ function MoreScreen({loggedIn,userName,onLogin,onBranches,onProfile,onLogout,onB
         </LinearGradient>
         <View style={{flex:1}}>
           <Text style={{fontSize:15,fontWeight:'700',color:'white',marginBottom:2}}>{loggedIn?userName:'مرحباً بك'}</Text>
-          <Text style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>{loggedIn?'عميل مسجل':'غير مسجل'}</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
+            <Text style={{fontSize:10,color:'rgba(255,255,255,0.5)'}}>{loggedIn?'عميل مسجل':'غير مسجل'}</Text>
+            {loggedIn&&(emailVerified
+              ? <View style={{backgroundColor:'rgba(42,138,69,0.25)',borderRadius:6,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,color:'#7DFFA0',fontWeight:'700'}}>✓ موثّق</Text></View>
+              : <View style={{backgroundColor:'rgba(208,48,48,0.25)',borderRadius:6,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,color:'#FFB0B0',fontWeight:'700'}}>⚠ غير موثّق</Text></View>
+            )}
+          </View>
         </View>
         {!loggedIn&&(
           <TouchableOpacity onPress={onLogin} style={{backgroundColor:C.blue,borderRadius:10,paddingHorizontal:14,paddingVertical:7}}>
@@ -645,6 +733,19 @@ function MoreScreen({loggedIn,userName,onLogin,onBranches,onProfile,onLogout,onB
         )}
       </LinearGradient>
       <ScrollView showsVerticalScrollIndicator={false}>
+        {loggedIn&&!emailVerified&&(
+          <View style={{backgroundColor:'#FFF8E7',borderBottomWidth:1,borderBottomColor:'#F5D87A',padding:14}}>
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <TouchableOpacity onPress={resendSent?null:resendVerification} disabled={resending}>
+                <Text style={{fontSize:11,color:C.blue,fontWeight:'700'}}>{resendSent?'تم الإرسال ✓':resending?'جارٍ الإرسال...':'إعادة الإرسال'}</Text>
+              </TouchableOpacity>
+              <View style={{flex:1,marginRight:10}}>
+                <Text style={{fontSize:12,fontWeight:'700',color:'#7A5500',textAlign:'right'}}>⚠️ البريد الإلكتروني غير موثّق</Text>
+                <Text style={{fontSize:11,color:'#9A7520',textAlign:'right',marginTop:2}}>تحقق من بريدك لتفعيل حسابك والاستفادة من جميع المزايا.</Text>
+              </View>
+            </View>
+          </View>
+        )}
         {rows.map((r,i)=>(
           <TouchableOpacity key={i} onPress={r.p} activeOpacity={r.p?0.7:1}
             style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:13,backgroundColor:C.white,borderBottomWidth:1,borderBottomColor:C.bg}}>
@@ -734,17 +835,23 @@ function DoctorDetail({doctor:d,onBack,onBook}){
   );
 }
 
-function LoginScreen({onBack,onLogin,onRegister}){
+function LoginScreen({onBack,onLogin,onRegister,onForgot}){
   const [em,setEm]=useState('');
   const [pw,setPw]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState('');
+  const [showPw,setShowPw]=useState(false);
   const login=async()=>{
-    if(!em.trim()){webAlert('تنبيه','يرجى إدخال البريد أو الجوال');return;}
-    if(!pw.trim()){webAlert('تنبيه','يرجى إدخال كلمة المرور');return;}
-    const res = await apiPost('/auth/login', { email:em, password:pw });
+    setErr('');
+    if(!em.trim()){setErr('يرجى إدخال البريد الإلكتروني');return;}
+    if(!pw.trim()){setErr('يرجى إدخال كلمة المرور');return;}
+    setLoading(true);
+    const res = await apiPost('/auth/login', { email:em.trim(), password:pw });
+    setLoading(false);
     if (res?.ok) {
-      onLogin(res.user?.name || em.split('@')[0] || em);
+      onLogin(res.user, res.token);
     } else {
-      onLogin(em.split('@')[0]||em);
+      setErr(res?.msg || 'حدث خطأ، حاول مرة أخرى');
     }
   };
   return(
@@ -757,21 +864,34 @@ function LoginScreen({onBack,onLogin,onRegister}){
         </LinearGradient>
         <Text style={{fontSize:20,fontWeight:'700',color:C.navy,marginBottom:4}}>مرحباً بك 👋</Text>
         <Text style={{fontSize:12,color:C.txtL,marginBottom:28}}>سجّل دخولك للمتابعة</Text>
-        {[{lbl:'البريد الإلكتروني أو رقم الجوال',v:em,s:setEm,kb:'email-address',sc:false},{lbl:'كلمة المرور',v:pw,s:setPw,kb:'default',sc:true}].map((f,i)=>(
-          <View key={i} style={{width:'100%',marginBottom:12}}>
-            <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>{f.lbl}</Text>
-            <TextInput style={{width:'100%',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,padding:12,fontSize:13,color:C.txt}} placeholder={f.lbl} value={f.v} onChangeText={f.s} keyboardType={f.kb} secureTextEntry={f.sc} textAlign="right" placeholderTextColor={C.txtL}/>
+
+        {err ? <View style={{width:'100%',backgroundColor:C.redL,borderRadius:10,padding:10,marginBottom:12}}><Text style={{fontSize:12,color:C.red,textAlign:'right'}}>{err}</Text></View> : null}
+
+        <View style={{width:'100%',marginBottom:12}}>
+          <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>البريد الإلكتروني</Text>
+          <TextInput style={{width:'100%',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,padding:12,fontSize:13,color:C.txt}} placeholder="أدخل بريدك الإلكتروني" value={em} onChangeText={v=>{setEm(v);setErr('');}} keyboardType="email-address" textAlign="right" placeholderTextColor={C.txtL} autoCapitalize="none"/>
+        </View>
+        <View style={{width:'100%',marginBottom:6}}>
+          <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>كلمة المرور</Text>
+          <View style={{flexDirection:'row',alignItems:'center',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,paddingHorizontal:12}}>
+            <TouchableOpacity onPress={()=>setShowPw(p=>!p)} style={{padding:4}}>
+              <Text style={{fontSize:16,color:C.txtL}}>{showPw?'🙈':'👁️'}</Text>
+            </TouchableOpacity>
+            <TextInput style={{flex:1,padding:12,fontSize:13,color:C.txt}} placeholder="أدخل كلمة المرور" value={pw} onChangeText={v=>{setPw(v);setErr('');}} secureTextEntry={!showPw} textAlign="right" placeholderTextColor={C.txtL}/>
           </View>
-        ))}
-        <TouchableOpacity style={{alignSelf:'flex-start',marginBottom:22}}><Text style={{fontSize:11,color:C.blue,fontWeight:'600'}}>نسيت كلمة المرور؟</Text></TouchableOpacity>
-        <TouchableOpacity style={{width:'100%'}} onPress={login} activeOpacity={0.85}>
-          <LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center',width:'100%'}}>
-            <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>تسجيل الدخول</Text>
+        </View>
+        <TouchableOpacity style={{alignSelf:'flex-start',marginBottom:22}} onPress={onForgot}>
+          <Text style={{fontSize:11,color:C.blue,fontWeight:'600'}}>نسيت كلمة المرور؟</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{width:'100%'}} onPress={login} activeOpacity={0.85} disabled={loading}>
+          <LinearGradient colors={loading?['#6B86AA','#4A6090']:[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center',width:'100%'}}>
+            <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ التحقق...':'تسجيل الدخول'}</Text>
           </LinearGradient>
         </TouchableOpacity>
         <TouchableOpacity onPress={onRegister} style={{marginTop:20}}>
           <Text style={{fontSize:12,color:C.txtL}}>ليس لديك حساب؟ <Text style={{color:C.blue,fontWeight:'700'}}>أنشئ حساباً</Text></Text>
         </TouchableOpacity>
+        <View style={{height:30}}/>
       </ScrollView>
     </SafeAreaView>
   );
@@ -779,44 +899,148 @@ function LoginScreen({onBack,onLogin,onRegister}){
 
 function RegisterScreen({onBack,onDone}){
   const [v,setV]=useState({name:'',email:'',phone:'',age:'',id:'',pass:'',pass2:''});
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState('');
+  const [showPw,setShowPw]=useState(false);
+  const [showPw2,setShowPw2]=useState(false);
   const s=(k)=>(val)=>setV(p=>({...p,[k]:val}));
-  const fields=[
-    {k:'name', lbl:'الاسم الكامل *',             kb:'default',      sc:false},
-    {k:'email',lbl:'البريد الإلكتروني *',         kb:'email-address',sc:false},
-    {k:'phone',lbl:'رقم الهاتف *',                kb:'phone-pad',    sc:false},
-    {k:'age',  lbl:'العمر',                       kb:'number-pad',   sc:false},
-    {k:'id',   lbl:'رقم الهوية أو الإقامة',      kb:'number-pad',   sc:false},
-    {k:'pass', lbl:'كلمة المرور *',               kb:'default',      sc:true },
-    {k:'pass2',lbl:'تأكيد كلمة المرور *',         kb:'default',      sc:true },
-  ];
+
+  const validatePassword=(pw)=>{
+    if(pw.length<8) return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+    if(!/[A-Za-z]/.test(pw)) return 'يجب أن تحتوي على حروف إنجليزية';
+    if(!/[0-9]/.test(pw)) return 'يجب أن تحتوي على أرقام';
+    return null;
+  };
+  const pwStrength=(pw)=>{
+    if(!pw) return null;
+    const s=validatePassword(pw);
+    if(s) return {label:'ضعيفة',color:'#D03030',pct:33};
+    if(pw.length>=12&&/[^A-Za-z0-9]/.test(pw)) return {label:'قوية جداً',color:'#2A8A45',pct:100};
+    if(pw.length>=10) return {label:'قوية',color:'#2A8A45',pct:80};
+    return {label:'مقبولة',color:'#E07800',pct:60};
+  };
+  const strength=pwStrength(v.pass);
+
   const reg=async()=>{
-    if(!v.name.trim()){webAlert('تنبيه','يرجى إدخال الاسم');return;}
-    if(!v.email.trim()){webAlert('تنبيه','يرجى إدخال البريد');return;}
-    if(!v.phone.trim()){webAlert('تنبيه','يرجى إدخال الهاتف');return;}
-    if(!v.pass.trim()){webAlert('تنبيه','يرجى إدخال كلمة المرور');return;}
-    if(v.pass!==v.pass2){webAlert('تنبيه','كلمتا المرور غير متطابقتين');return;}
-    const res = await apiPost('/auth/register', { name:v.name, email:v.email, phone:v.phone, password:v.pass, age:v.age, idNum:v.id });
-    if (res && !res.ok) {
-      webAlert('تنبيه', res.msg || 'حدث خطأ'); return;
+    setErr('');
+    if(!v.name.trim()){setErr('يرجى إدخال الاسم الكامل');return;}
+    const emailRx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if(!v.email.trim()||!emailRx.test(v.email.trim())){setErr('يرجى إدخال بريد إلكتروني صحيح');return;}
+    if(!v.phone.trim()){setErr('يرجى إدخال رقم الهاتف');return;}
+    const pwErr=validatePassword(v.pass);
+    if(pwErr){setErr(pwErr);return;}
+    if(v.pass!==v.pass2){setErr('كلمتا المرور غير متطابقتين');return;}
+    setLoading(true);
+    const res = await apiPost('/auth/register', { name:v.name.trim(), email:v.email.trim(), phone:v.phone.trim(), password:v.pass, age:v.age, idNum:v.id });
+    setLoading(false);
+    if (res?.ok) {
+      onDone(res.user, res.token);
+    } else {
+      setErr(res?.msg || 'حدث خطأ، حاول مرة أخرى');
     }
-    onDone(v.name);
   };
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
       <BB title="إنشاء حساب جديد" onBack={onBack}/>
       <ScrollView contentContainerStyle={{padding:20}} keyboardShouldPersistTaps="handled">
-        {fields.map((f,i)=>(
+        {err ? <View style={{backgroundColor:C.redL,borderRadius:10,padding:10,marginBottom:12}}><Text style={{fontSize:12,color:C.red,textAlign:'right'}}>{err}</Text></View> : null}
+
+        {[
+          {k:'name', lbl:'الاسم الكامل *',        kb:'default',       sc:false},
+          {k:'email',lbl:'البريد الإلكتروني *',    kb:'email-address', sc:false,cap:'none'},
+          {k:'phone',lbl:'رقم الهاتف *',           kb:'phone-pad',     sc:false},
+          {k:'age',  lbl:'العمر',                  kb:'number-pad',    sc:false},
+          {k:'id',   lbl:'رقم الهوية أو الإقامة', kb:'number-pad',    sc:false},
+        ].map((f,i)=>(
           <View key={i} style={{marginBottom:12}}>
             <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>{f.lbl}</Text>
-            <TextInput style={{backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:11,fontSize:13,color:C.txt}} placeholder={f.lbl.replace(' *','')} value={v[f.k]} onChangeText={s(f.k)} keyboardType={f.kb} secureTextEntry={f.sc} textAlign="right" placeholderTextColor={C.txtL}/>
+            <TextInput style={{backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:11,fontSize:13,color:C.txt}} placeholder={f.lbl.replace(' *','')} value={v[f.k]} onChangeText={val=>{s(f.k)(val);setErr('');}} keyboardType={f.kb} secureTextEntry={f.sc} textAlign="right" placeholderTextColor={C.txtL} autoCapitalize={f.cap||'words'}/>
           </View>
         ))}
-        <TouchableOpacity onPress={reg} activeOpacity={0.85} style={{marginTop:10}}>
-          <LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center'}}>
-            <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>إنشاء الحساب</Text>
+
+        <View style={{marginBottom:6}}>
+          <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>كلمة المرور * (8 أحرف + أرقام)</Text>
+          <View style={{flexDirection:'row',alignItems:'center',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:10,paddingHorizontal:10}}>
+            <TouchableOpacity onPress={()=>setShowPw(p=>!p)} style={{padding:4}}><Text style={{fontSize:16,color:C.txtL}}>{showPw?'🙈':'👁️'}</Text></TouchableOpacity>
+            <TextInput style={{flex:1,padding:11,fontSize:13,color:C.txt}} placeholder="أدخل كلمة المرور" value={v.pass} onChangeText={val=>{s('pass')(val);setErr('');}} secureTextEntry={!showPw} textAlign="right" placeholderTextColor={C.txtL}/>
+          </View>
+          {strength&&<View style={{marginTop:5}}>
+            <View style={{height:4,backgroundColor:C.bgD,borderRadius:4,overflow:'hidden'}}>
+              <View style={{height:4,backgroundColor:strength.color,width:`${strength.pct}%`,borderRadius:4}}/>
+            </View>
+            <Text style={{fontSize:10,color:strength.color,textAlign:'right',marginTop:3}}>قوة كلمة المرور: {strength.label}</Text>
+          </View>}
+        </View>
+
+        <View style={{marginBottom:16}}>
+          <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>تأكيد كلمة المرور *</Text>
+          <View style={{flexDirection:'row',alignItems:'center',backgroundColor:C.white,borderWidth:1,borderColor:v.pass2&&v.pass!==v.pass2?C.red:C.bgD,borderRadius:10,paddingHorizontal:10}}>
+            <TouchableOpacity onPress={()=>setShowPw2(p=>!p)} style={{padding:4}}><Text style={{fontSize:16,color:C.txtL}}>{showPw2?'🙈':'👁️'}</Text></TouchableOpacity>
+            <TextInput style={{flex:1,padding:11,fontSize:13,color:C.txt}} placeholder="أعد إدخال كلمة المرور" value={v.pass2} onChangeText={val=>{s('pass2')(val);setErr('');}} secureTextEntry={!showPw2} textAlign="right" placeholderTextColor={C.txtL}/>
+          </View>
+        </View>
+
+        <View style={{backgroundColor:C.blueL,borderRadius:10,padding:10,marginBottom:16}}>
+          <Text style={{fontSize:11,color:C.blueD,textAlign:'right',lineHeight:18}}>📧 سيتم إرسال رابط التحقق إلى بريدك الإلكتروني بعد إنشاء الحساب.</Text>
+        </View>
+
+        <TouchableOpacity onPress={reg} activeOpacity={0.85} disabled={loading} style={{marginTop:4}}>
+          <LinearGradient colors={loading?['#6B86AA','#4A6090']:[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center'}}>
+            <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ الإنشاء...':'إنشاء الحساب'}</Text>
           </LinearGradient>
         </TouchableOpacity>
         <View style={{height:30}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function ForgotPasswordScreen({onBack}){
+  const [email,setEmail]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [sent,setSent]=useState(false);
+  const [err,setErr]=useState('');
+
+  const send=async()=>{
+    setErr('');
+    const emailRx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if(!email.trim()||!emailRx.test(email.trim())){setErr('يرجى إدخال بريد إلكتروني صحيح');return;}
+    setLoading(true);
+    const res=await apiPost('/auth/forgot-password',{email:email.trim()});
+    setLoading(false);
+    if(res?.ok) setSent(true);
+    else setErr(res?.msg||'حدث خطأ، حاول لاحقاً');
+  };
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="نسيت كلمة المرور" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:24,alignItems:'center'}} keyboardShouldPersistTaps="handled">
+        <Text style={{fontSize:40,marginBottom:16}}>🔒</Text>
+        <Text style={{fontSize:18,fontWeight:'700',color:C.navy,marginBottom:8,textAlign:'center'}}>استعادة كلمة المرور</Text>
+        <Text style={{fontSize:12,color:C.txtL,marginBottom:28,textAlign:'center',lineHeight:20}}>أدخل بريدك الإلكتروني المسجل وسنرسل لك رابطاً لإعادة تعيين كلمة المرور</Text>
+        {sent?(
+          <View style={{backgroundColor:C.grnL,borderRadius:16,padding:24,alignItems:'center',width:'100%'}}>
+            <Text style={{fontSize:36,marginBottom:12}}>✅</Text>
+            <Text style={{fontSize:15,fontWeight:'700',color:C.grn,marginBottom:8,textAlign:'center'}}>تم إرسال الرابط!</Text>
+            <Text style={{fontSize:12,color:C.grn,textAlign:'center',lineHeight:20}}>إذا كان البريد مسجلاً، ستجد رابط إعادة التعيين في صندوق البريد الوارد.</Text>
+            <TouchableOpacity onPress={onBack} style={{marginTop:20}}>
+              <Text style={{fontSize:13,color:C.blue,fontWeight:'700'}}>العودة لتسجيل الدخول</Text>
+            </TouchableOpacity>
+          </View>
+        ):(
+          <>
+            {err?<View style={{width:'100%',backgroundColor:C.redL,borderRadius:10,padding:10,marginBottom:12}}><Text style={{fontSize:12,color:C.red,textAlign:'right'}}>{err}</Text></View>:null}
+            <View style={{width:'100%',marginBottom:20}}>
+              <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>البريد الإلكتروني</Text>
+              <TextInput style={{width:'100%',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,padding:12,fontSize:13,color:C.txt}} placeholder="example@email.com" value={email} onChangeText={v=>{setEmail(v);setErr('');}} keyboardType="email-address" textAlign="right" placeholderTextColor={C.txtL} autoCapitalize="none"/>
+            </View>
+            <TouchableOpacity style={{width:'100%'}} onPress={send} disabled={loading} activeOpacity={0.85}>
+              <LinearGradient colors={loading?['#6B86AA','#4A6090']:[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center',width:'100%'}}>
+                <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ الإرسال...':'إرسال رابط الاسترداد'}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -859,26 +1083,90 @@ function BranchesScreen({onBack,branches:propBranches}){
   );
 }
 
-function ProfileScreen({onBack,userName}){
-  const [v,setV]=useState({name:userName||'د. حسالم باصفار',email:'info@basaffar.com',phone:'+966501234567',age:'32',nat:'سعودي',id:'1012345678'});
-  const s=(k)=>(val)=>setV(p=>({...p,[k]:val}));
-  const fields=[{k:'name',lbl:'الاسم الكامل'},{k:'email',lbl:'البريد الإلكتروني',kb:'email-address'},{k:'phone',lbl:'رقم الجوال',kb:'phone-pad'},{k:'age',lbl:'العمر',kb:'number-pad'},{k:'nat',lbl:'الجنسية'},{k:'id',lbl:'رقم الهوية',kb:'number-pad'}];
+function ProfileScreen({onBack,userName,userEmail,emailVerified,onVerifiedUpdate}){
+  const [v,setV]=useState({name:userName||'',email:userEmail||'',phone:'',age:'',nat:'',id:''});
+  const [loading,setLoading]=useState(true);
+  const [savingPw,setSavingPw]=useState(false);
+  const [pw,setPw]=useState({cur:'',next:'',next2:''});
+  const [pwErr,setPwErr]=useState('');
+  const [pwOk,setPwOk]=useState('');
+  const [resendSent,setResendSent]=useState(false);
+
+  useEffect(()=>{
+    apiFetch('/auth/me').then(res=>{
+      if(res?.ok) {
+        const u=res.user;
+        setV(p=>({...p,name:u.name||'',email:u.email||'',phone:u.phone||''}));
+      }
+      setLoading(false);
+    });
+  },[]);
+
+  const changePassword=async()=>{
+    setPwErr('');setPwOk('');
+    if(!pw.cur){setPwErr('أدخل كلمة المرور الحالية');return;}
+    if(pw.next.length<8){setPwErr('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل');return;}
+    if(pw.next!==pw.next2){setPwErr('كلمتا المرور الجديدة غير متطابقتين');return;}
+    setSavingPw(true);
+    const res=await apiPost('/auth/change-password',{currentPassword:pw.cur,newPassword:pw.next});
+    setSavingPw(false);
+    if(res?.ok){setPwOk('تم تغيير كلمة المرور بنجاح ✓');setPw({cur:'',next:'',next2:''});}
+    else setPwErr(res?.msg||'حدث خطأ');
+  };
+
+  const resendVerification=async()=>{
+    if(!userEmail) return;
+    await apiPost('/auth/resend-verification',{email:userEmail});
+    setResendSent(true);
+  };
+
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
       <BB title="البيانات الشخصية" onBack={onBack}/>
       <ScrollView contentContainerStyle={{padding:20}} keyboardShouldPersistTaps="handled">
-        {fields.map((f,i)=>(
-          <View key={i} style={{marginBottom:12}}>
-            <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>{f.lbl}</Text>
-            <TextInput style={{backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:11,fontSize:13,color:C.txt}} value={v[f.k]} onChangeText={s(f.k)} keyboardType={f.kb||'default'} textAlign="right" placeholderTextColor={C.txtL}/>
+        <View style={{backgroundColor:C.white,borderRadius:16,padding:16,marginBottom:16,borderWidth:1,borderColor:C.bgD}}>
+          <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <View style={{backgroundColor:emailVerified?C.grnL:C.redL,borderRadius:8,paddingHorizontal:10,paddingVertical:4}}>
+              <Text style={{fontSize:11,fontWeight:'700',color:emailVerified?C.grn:C.red}}>{emailVerified?'✓ البريد موثّق':'⚠ البريد غير موثّق'}</Text>
+            </View>
+            <Text style={{fontSize:13,fontWeight:'700',color:C.navy}}>معلوماتي</Text>
           </View>
-        ))}
-        <TouchableOpacity activeOpacity={0.85} style={{marginTop:12}}
-          onPress={()=>webAlert('تم الحفظ ✓','تم تحديث بياناتك بنجاح',[{text:'حسناً'}])}>
-          <LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center'}}>
-            <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>💾 حفظ التعديلات</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+          {!emailVerified&&(
+            <TouchableOpacity onPress={resendVerification} style={{backgroundColor:C.blueL,borderRadius:10,padding:10,marginBottom:12}}>
+              <Text style={{fontSize:12,color:C.blueD,textAlign:'center',fontWeight:'600'}}>{resendSent?'تم إرسال رابط التحقق ✓':'📧 إعادة إرسال رابط التحقق'}</Text>
+            </TouchableOpacity>
+          )}
+          {[
+            {k:'name', lbl:'الاسم الكامل',        kb:'default'},
+            {k:'email',lbl:'البريد الإلكتروني',   kb:'email-address'},
+            {k:'phone',lbl:'رقم الجوال',           kb:'phone-pad'},
+            {k:'age',  lbl:'العمر',                kb:'number-pad'},
+            {k:'nat',  lbl:'الجنسية',              kb:'default'},
+            {k:'id',   lbl:'رقم الهوية',           kb:'number-pad'},
+          ].map((f,i)=>(
+            <View key={i} style={{marginBottom:10}}>
+              <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:4,textAlign:'right'}}>{f.lbl}</Text>
+              <TextInput style={{backgroundColor:C.bg,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:10,fontSize:13,color:C.txt}} value={v[f.k]} onChangeText={val=>setV(p=>({...p,[f.k]:val}))} keyboardType={f.kb||'default'} textAlign="right" placeholderTextColor={C.txtL}/>
+            </View>
+          ))}
+        </View>
+
+        <View style={{backgroundColor:C.white,borderRadius:16,padding:16,marginBottom:16,borderWidth:1,borderColor:C.bgD}}>
+          <Text style={{fontSize:13,fontWeight:'700',color:C.navy,marginBottom:12,textAlign:'right'}}>🔒 تغيير كلمة المرور</Text>
+          {pwErr?<View style={{backgroundColor:C.redL,borderRadius:8,padding:8,marginBottom:8}}><Text style={{fontSize:11,color:C.red,textAlign:'right'}}>{pwErr}</Text></View>:null}
+          {pwOk?<View style={{backgroundColor:C.grnL,borderRadius:8,padding:8,marginBottom:8}}><Text style={{fontSize:11,color:C.grn,textAlign:'right'}}>{pwOk}</Text></View>:null}
+          {[{k:'cur',lbl:'كلمة المرور الحالية'},{k:'next',lbl:'كلمة المرور الجديدة'},{k:'next2',lbl:'تأكيد كلمة المرور الجديدة'}].map((f,i)=>(
+            <View key={i} style={{marginBottom:10}}>
+              <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:4,textAlign:'right'}}>{f.lbl}</Text>
+              <TextInput style={{backgroundColor:C.bg,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:10,fontSize:13,color:C.txt}} value={pw[f.k]} onChangeText={val=>{setPwErr('');setPwOk('');setPw(p=>({...p,[f.k]:val}));}} secureTextEntry={true} textAlign="right" placeholderTextColor={C.txtL}/>
+            </View>
+          ))}
+          <TouchableOpacity onPress={changePassword} disabled={savingPw} activeOpacity={0.85}>
+            <LinearGradient colors={savingPw?['#6B86AA','#4A6090']:[C.navy,C.navyM]} style={{borderRadius:12,padding:12,alignItems:'center'}}>
+              <Text style={{fontSize:13,fontWeight:'700',color:'white'}}>{savingPw?'جارٍ الحفظ...':'تغيير كلمة المرور'}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
         <View style={{height:30}}/>
       </ScrollView>
     </SafeAreaView>

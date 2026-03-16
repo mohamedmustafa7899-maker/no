@@ -67,6 +67,17 @@ mobile-app/                        # Vite + React Native Web project (port 5000)
 - **Doctor Detail** — individual doctor info
 - **Offer Detail** — individual offer with booking
 
+## Authentication System
+- Implemented in `BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/auth.js`
+- **JWT tokens** (7-day expiry, signed with `JWT_SECRET` env var)
+- **bcrypt** password hashing (salt rounds: 12)
+- **Email verification** via nodemailer (Ethereal test mode by default; configure `SMTP_HOST/PORT/USER/PASS` env vars for real SMTP)
+- **Forgot/reset password** flow with 1-hour expiry tokens
+- **Rate limiting**: login (10/15min), register (5/hour), resend (3/hour)
+- **Security headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
+- **Authenticated `/me` endpoint** to validate tokens on app startup
+- Token stored in `localStorage` and sent as `Authorization: Bearer <token>` header
+
 ## API Endpoints
 - `GET /api/ping` — health check
 - `GET/POST/PUT/DELETE /api/depts` — departments
@@ -78,4 +89,12 @@ mobile-app/                        # Vite + React Native Web project (port 5000)
 - `GET /api/clients` — registered clients
 - `GET/POST /api/notifications` — push notifications
 - `GET/PUT /api/settings` — app settings
-- `POST /api/auth/login` / `POST /api/auth/register` — auth
+- `POST /api/auth/register` — register (bcrypt + JWT + email verification)
+- `POST /api/auth/login` — login (returns JWT)
+- `GET /api/auth/me` — get current user (requires JWT)
+- `GET /api/auth/verify-email?token=...` — verify email via link
+- `POST /api/auth/resend-verification` — resend verification email
+- `POST /api/auth/forgot-password` — send password reset email
+- `GET /api/auth/reset-password-page?token=...` — password reset web page
+- `POST /api/auth/reset-password` — reset password with token
+- `POST /api/auth/change-password` — change password (requires JWT)

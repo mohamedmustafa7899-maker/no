@@ -1,17 +1,30 @@
-const express = require('express');
-const cors    = require('cors');
-const fs      = require('fs');
-const path    = require('path');
+const express  = require('express');
+const cors     = require('cors');
+const fs       = require('fs');
+const path     = require('path');
+const { router: authRouter } = require('./auth');
 
 const app  = express();
 const PORT = 3000;
 const DB   = path.join(__dirname, 'db.json');
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+
+// ─── Security headers ────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
 
 // Serve dashboard static files
 app.use(express.static(path.join(__dirname, '../dashboard')));
+
+// ─── Auth routes (secure) ─────────────────────────────────────────────────────
+app.use('/api/auth', authRouter);
 
 // ─── DB helpers ────────────────────────────────────────
 function readDB() {
@@ -349,35 +362,6 @@ app.put('/api/settings', (req, res) => {
   db.settings = { ...db.settings, ...req.body };
   writeDB(db);
   res.json({ ok:true, settings: db.settings });
-});
-
-// ─── AUTH (simple) ─────────────────────────────────────
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ ok:false, msg:'بيانات ناقصة' });
-  // In production: validate against real user DB
-  res.json({ ok:true, user: { name: email.split('@')[0] || email, email } });
-});
-
-app.post('/api/auth/register', (req, res) => {
-  const db = readDB();
-  const { name, email, phone, password } = req.body;
-  if (!name || !email || !phone || !password)
-    return res.status(400).json({ ok:false, msg:'يرجى إكمال البيانات' });
-  const existing = db.clients.find(c => c.phone === phone);
-  if (existing) return res.status(400).json({ ok:false, msg:'رقم الهاتف مسجل مسبقاً' });
-  const client = {
-    id: nextId(db,'clients'),
-    name, email, phone,
-    age: req.body.age,
-    nationality: req.body.nationality,
-    idNum: req.body.idNum,
-    bookings: 0,
-    joinedAt: new Date().toISOString(),
-  };
-  db.clients.push(client);
-  writeDB(db);
-  res.json({ ok:true, user: { name, email } });
 });
 
 // ─── HEALTH CHECK ───────────────────────────────────────

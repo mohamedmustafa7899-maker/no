@@ -317,6 +317,15 @@
       "idNum": "2542409848",
       "bookings": 1,
       "joinedAt": "2026-03-16T14:02:27.335Z"
+    },
+    {
+      "id": 1,
+      "name": "Test User",
+      "email": "test@example.com",
+      "phone": "0501234567",
+      "idNum": null,
+      "bookings": 0,
+      "joinedAt": "2026-03-16T23:57:01.031Z"
     }
   ],
   "notifications": [
@@ -350,5 +359,24 @@
     "bookings": 2,
     "clients": 2,
     "notifications": 2
-  }
+  },
+  "users": [
+    {
+      "id": 1,
+      "name": "Test User",
+      "email": "test@example.com",
+      "phone": "0501234567",
+      "age": null,
+      "idNum": null,
+      "nationality": null,
+      "passwordHash": "$2b$12$aVUg/G2Ng2GxSmDoeBsaJOoJfYaQVGpFbbh4/3cHOfBSfqqlxjcbq",
+      "emailVerified": false,
+      "verifyToken": "35845fbbbf03d5e0d813b647986002d4c50041299c3fcfa42c06a7256922d940",
+      "verifyExpires": 1773791821031,
+      "resetToken": null,
+      "resetExpires": null,
+      "createdAt": "2026-03-16T23:57:01.031Z",
+      "bookings": 0
+    }
+  ]
 }
