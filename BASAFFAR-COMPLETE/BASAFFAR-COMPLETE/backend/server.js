@@ -4,11 +4,14 @@ const fs      = require('fs');
 const path    = require('path');
 
 const app  = express();
-const PORT = 3000;
+const PORT = 5000;
 const DB   = path.join(__dirname, 'db.json');
 
 app.use(cors());
 app.use(express.json());
+
+// Serve dashboard static files
+app.use(express.static(path.join(__dirname, '../dashboard')));
 
 // ─── DB helpers ────────────────────────────────────────
 function readDB() {
@@ -379,6 +382,11 @@ app.post('/api/auth/register', (req, res) => {
 
 // ─── HEALTH CHECK ───────────────────────────────────────
 app.get('/api/ping', (req, res) => res.json({ ok:true, time: new Date().toISOString() }));
+
+// ─── DASHBOARD ROOT ─────────────────────────────────────
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dashboard/alshakreen-dashboard.html'));
+});
 
 // ─── START ──────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {

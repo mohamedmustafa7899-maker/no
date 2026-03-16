@@ -1,0 +1,386 @@
+{
+  "depts": [
+    {
+      "id": 1,
+      "label": "الأسنان",
+      "labelEn": "Dental",
+      "dept": "أسنان",
+      "image": "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=300&q=80",
+      "color": [
+        "#0A1628",
+        "#1A3A6B"
+      ],
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": 2,
+      "label": "الجلدية والليزر",
+      "labelEn": "Dermatology",
+      "dept": "جلدية",
+      "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=300&q=80",
+      "color": [
+        "#0D2154",
+        "#1A4A8A"
+      ],
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": 3,
+      "label": "العيون",
+      "labelEn": "Ophthalmology",
+      "dept": "عيون",
+      "image": "https://images.unsplash.com/photo-1551884170-09fb70a3a2ed?w=300&q=80",
+      "color": [
+        "#0A1840",
+        "#102060"
+      ],
+      "active": true,
+      "order": 3
+    },
+    {
+      "id": 4,
+      "label": "التجميل",
+      "labelEn": "Cosmetics",
+      "dept": "تجميل",
+      "image": "https://images.unsplash.com/photo-1487412912498-0447578fcca8?w=300&q=80",
+      "color": [
+        "#0D1840",
+        "#1A2870"
+      ],
+      "active": true,
+      "order": 4
+    },
+    {
+      "id": 5,
+      "label": "فروعنا",
+      "labelEn": "Branches",
+      "dept": "branches",
+      "image": "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=300&q=80",
+      "color": [
+        "#0A1530",
+        "#1A3070"
+      ],
+      "active": true,
+      "order": 5
+    }
+  ],
+  "offers": [
+    {
+      "id": 1,
+      "dept": "أسنان",
+      "icon": "🦷",
+      "name": "زراعة الأسنان + تركيبة الزيركون",
+      "nameEn": "Implant + Zirconia",
+      "price": 2590,
+      "orig": 3200,
+      "color": [
+        "#0A1628",
+        "#1A3A6B"
+      ],
+      "desc": "زراعة الأسنان بالتقنية الحديثة مع تركيبة الزيركون عالية الجودة.",
+      "active": true
+    },
+    {
+      "id": 2,
+      "dept": "جلدية",
+      "icon": "✨",
+      "name": "جلسة ليزر إزالة الشعر الكامل",
+      "nameEn": "Full Laser Hair Removal",
+      "price": 890,
+      "orig": 1200,
+      "color": [
+        "#0D2154",
+        "#1A4A8A"
+      ],
+      "desc": "إزالة شعر بالليزر الأمريكي لجميع مناطق الجسم.",
+      "active": true
+    },
+    {
+      "id": 3,
+      "dept": "عيون",
+      "icon": "👁️",
+      "name": "تصحيح النظر بالليزر LASIK",
+      "nameEn": "LASIK Eye Surgery",
+      "price": 3200,
+      "orig": 3200,
+      "color": [
+        "#0A1840",
+        "#102060"
+      ],
+      "desc": "عملية تصحيح النظر بتقنية الليزر الجديدة الآمنة.",
+      "active": true
+    },
+    {
+      "id": 4,
+      "dept": "أسنان",
+      "icon": "🦷",
+      "name": "زراعة الأسنان + تركيبة البورسلين",
+      "nameEn": "Implant + Porcelain",
+      "price": 2390,
+      "orig": 2800,
+      "color": [
+        "#0A1628",
+        "#0F2A5A"
+      ],
+      "desc": "زراعة مع تركيبة البورسلين ذات المظهر الطبيعي.",
+      "active": true
+    },
+    {
+      "id": 5,
+      "dept": "تجميل",
+      "icon": "💄",
+      "name": "حقن البوتوكس للوجه",
+      "nameEn": "Face Botox",
+      "price": 1200,
+      "orig": 1500,
+      "color": [
+        "#0D1840",
+        "#1A2870"
+      ],
+      "desc": "حقن البوتوكس لإزالة التجاعيد وتحسين مظهر الوجه.",
+      "active": true
+    },
+    {
+      "id": 6,
+      "dept": "أسنان",
+      "icon": "🦷",
+      "name": "تبييض الأسنان بالليزر",
+      "nameEn": "Laser Teeth Whitening",
+      "price": 650,
+      "orig": 900,
+      "color": [
+        "#0A1838",
+        "#1030A0"
+      ],
+      "desc": "جلسة تبييض بالليزر لنتائج فورية.",
+      "active": true
+    },
+    {
+      "id": 7,
+      "dept": "جلدية",
+      "icon": "✨",
+      "name": "جلسة تقشير البشرة الكيميائي",
+      "nameEn": "Chemical Peel",
+      "price": 480,
+      "orig": 600,
+      "color": [
+        "#061830",
+        "#0E2860"
+      ],
+      "desc": "تقشير كيميائي متخصص لتجديد البشرة.",
+      "active": true
+    },
+    {
+      "id": 8,
+      "dept": "تجميل",
+      "icon": "💄",
+      "name": "فيلر الشفاه والخدود",
+      "nameEn": "Lip & Cheek Filler",
+      "price": 980,
+      "orig": 1200,
+      "color": [
+        "#0A1530",
+        "#1A3070"
+      ],
+      "desc": "حقن الفيلر لتحسين حجم وشكل الشفاه.",
+      "active": true
+    }
+  ],
+  "doctors": [
+    {
+      "id": 1,
+      "name": "د. أحمد باصفار",
+      "nameEn": "Dr. Ahmed Basaffar",
+      "spec": "أسنان وزراعة",
+      "specEn": "Dental & Implants",
+      "exp": 15,
+      "rating": 4.9,
+      "patients": 2400,
+      "emoji": "👨‍⚕️",
+      "color": [
+        "#0A1628",
+        "#1A3A6B"
+      ],
+      "bio": "متخصص في زراعة الأسنان وتركيبات الزيركون، حاصل على زمالة من المجلس السعودي للتخصصات الصحية.",
+      "branches": [
+        "الرياض",
+        "جدة"
+      ],
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "د. سارة النجدي",
+      "nameEn": "Dr. Sara Al-Najdi",
+      "spec": "جلدية وليزر",
+      "specEn": "Dermatology & Laser",
+      "exp": 10,
+      "rating": 4.8,
+      "patients": 1800,
+      "emoji": "👩‍⚕️",
+      "color": [
+        "#0D2154",
+        "#1A4A8A"
+      ],
+      "bio": "متخصصة في الجلدية وعلاجات الليزر، عضو الجمعية السعودية للجلدية.",
+      "branches": [
+        "جدة"
+      ],
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "د. خالد العمري",
+      "nameEn": "Dr. Khalid Al-Omari",
+      "spec": "عيون وليزر",
+      "specEn": "Ophthalmology",
+      "exp": 12,
+      "rating": 4.9,
+      "patients": 2100,
+      "emoji": "👨‍⚕️",
+      "color": [
+        "#0A1840",
+        "#102060"
+      ],
+      "bio": "استشاري عيون متخصص في تصحيح النظر بالليزر.",
+      "branches": [
+        "الرياض",
+        "الدمام"
+      ],
+      "active": true
+    },
+    {
+      "id": 4,
+      "name": "د. ريم الزهراني",
+      "nameEn": "Dr. Reem Al-Zahrani",
+      "spec": "تجميل وحقن",
+      "specEn": "Cosmetics & Injections",
+      "exp": 8,
+      "rating": 4.7,
+      "patients": 1200,
+      "emoji": "👩‍⚕️",
+      "color": [
+        "#0D1840",
+        "#1A2870"
+      ],
+      "bio": "متخصصة في التجميل الطبي وحقن البوتوكس والفيلر.",
+      "branches": [
+        "جدة"
+      ],
+      "active": true
+    }
+  ],
+  "banners": [
+    {
+      "id": 1,
+      "title": "DR BASAFFAR",
+      "subtitle": "رعاية طبية متخصصة بأحدث التقنيات",
+      "tag": "مركز باصفار 🏥",
+      "color": [
+        "#0A1628",
+        "#1A3A6B"
+      ],
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": 2,
+      "title": "زراعة الأسنان",
+      "subtitle": "أحدث تقنيات الزراعة الفورية",
+      "tag": "قسم الأسنان 🦷",
+      "color": [
+        "#0D2154",
+        "#1A4A8A"
+      ],
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": 3,
+      "title": "جلسات الليزر",
+      "subtitle": "تقنية الليزر بالأجهزة الأمريكية",
+      "tag": "الجلدية والليزر ✨",
+      "color": [
+        "#0A1840",
+        "#102060"
+      ],
+      "active": true,
+      "order": 3
+    }
+  ],
+  "branches": [
+    {
+      "id": 1,
+      "name": "الرياض — حي النزهة",
+      "nameEn": "Riyadh - Al-Nuzha",
+      "city": "الرياض",
+      "addr": "طريق الملك عبدالله، حي النزهة",
+      "phone": "011-234-5678",
+      "hours": "8 ص – 10 م",
+      "open": true,
+      "depts": [
+        "أسنان",
+        "جلدية",
+        "عيون"
+      ],
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "جدة — حي الروضة",
+      "nameEn": "Jeddah - Al-Rawdah",
+      "city": "جدة",
+      "addr": "شارع التحلية، حي الروضة",
+      "phone": "012-345-6789",
+      "hours": "9 ص – 11 م",
+      "open": true,
+      "depts": [
+        "أسنان",
+        "تجميل"
+      ],
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "الدمام — العزيزية",
+      "nameEn": "Dammam - Al-Aziziya",
+      "city": "الدمام",
+      "addr": "طريق الأمير محمد بن فهد",
+      "phone": "013-456-7890",
+      "hours": "9 ص – 10 م",
+      "open": false,
+      "depts": [
+        "أسنان",
+        "جلدية"
+      ],
+      "active": true
+    }
+  ],
+  "bookings": [],
+  "clients": [],
+  "notifications": [],
+  "settings": {
+    "appNameAr": "باصفار",
+    "appNameEn": "DR BASAFFAR",
+    "tagline": "مركز د. حسالم باصفار الطبي المتخصص",
+    "primaryColor": "#2463EB",
+    "phone": "+966501234567",
+    "email": "info@basaffar.com",
+    "website": "www.basaffar.com",
+    "enableBooking": true,
+    "enableCart": true,
+    "enableNotifications": true
+  },
+  "nextId": {
+    "depts": 6,
+    "offers": 9,
+    "doctors": 5,
+    "banners": 4,
+    "branches": 4,
+    "bookings": 1,
+    "clients": 1,
+    "notifications": 1
+  }
+}
