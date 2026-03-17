@@ -130,11 +130,6 @@ const BRANCHES_LIST = [
 const BRANCH_NAMES = BRANCHES_LIST.map(b => b.name);
 const BK_BRANCHES = BRANCH_NAMES;
 const OFFER_LIST   = ['زراعة الأسنان + الزيركون','ليزر إزالة الشعر','تصحيح النظر LASIK','حقن البوتوكس','تبييض الأسنان','فيلر الشفاه'];
-const ONBOARDING_SLIDES = [
-  { key:1, text:'استشر طبيبك الموثوق\nصحتك تستحق الأفضل',                    image:'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=500&q=90' },
-  { key:2, text:'اعثر على أفضل الأطباء المتخصصين\nكلهم في مكان واحد',        image:'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=500&q=90' },
-  { key:3, text:'تواصل مع استشاراتنا الطبية\nأونلاين بسهولة',                  image:'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=500&q=90' },
-];
 
 export default function App() {
   const [screen, setScreen] = useState('splash');
@@ -331,99 +326,207 @@ const N=StyleSheet.create({
   badgeTxt:{fontSize:9,fontWeight:'700',color:'white'},
 });
 
-function LogoBadge({dark}){
-  const textColor   = dark ? 'white' : C.navy;
-  const lineColor   = dark ? 'white' : C.blue;
-  const borderColor = dark ? 'rgba(255,255,255,0.55)' : C.blue;
+const OB_SLIDES = [
+  {
+    key:1,
+    grad:['#1B4FD8','#0A1628'],
+    icon:(
+      <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="80" cy="80" r="72" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"/>
+        <circle cx="80" cy="55" r="22" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.5)" strokeWidth="2"/>
+        <path d="M69 55 Q69 44 80 44 Q91 44 91 55 Q91 66 80 70 Q69 66 69 55Z" fill="white" opacity="0.85"/>
+        <path d="M54 105 C54 88 68 80 80 80 C92 80 106 88 106 105" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.85"/>
+        <circle cx="119" cy="98" r="14" fill="#2463EB" stroke="white" strokeWidth="2"/>
+        <path d="M119 93 L119 103 M114 98 L124 98" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+      </svg>
+    ),
+    title:'أطباء موثوقون بين يديك',
+    sub:'استشر نخبة من الأخصائيين في أي وقت\nومن أي مكان بكل سهولة',
+  },
+  {
+    key:2,
+    grad:['#0F3A8A','#071228'],
+    icon:(
+      <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="28" y="38" width="104" height="90" rx="12" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>
+        <path d="M28 60 L132 60" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>
+        <rect x="54" y="28" width="8" height="22" rx="4" fill="white" opacity="0.7"/>
+        <rect x="98" y="28" width="8" height="22" rx="4" fill="white" opacity="0.7"/>
+        <circle cx="56" cy="85" r="7" fill="#2463EB"/>
+        <circle cx="80" cy="85" r="7" fill="rgba(255,255,255,0.2)"/>
+        <circle cx="104" cy="85" r="7" fill="rgba(255,255,255,0.2)"/>
+        <circle cx="56" cy="109" r="7" fill="rgba(255,255,255,0.2)"/>
+        <circle cx="80" cy="109" r="7" fill="#2463EB"/>
+        <circle cx="104" cy="109" r="7" fill="rgba(255,255,255,0.2)"/>
+      </svg>
+    ),
+    title:'احجز موعدك في ثوانٍ',
+    sub:'نظام حجز ذكي يناسب جدولك اليومي\nدون انتظار أو تعقيد',
+  },
+  {
+    key:3,
+    grad:['#0C2E6E','#050F1E'],
+    icon:(
+      <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M80 28 L118 44 L118 88 C118 110 100 126 80 132 C60 126 42 110 42 88 L42 44 Z" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5"/>
+        <path d="M80 38 L110 51 L110 88 C110 106 96 119 80 124 C64 119 50 106 50 88 L50 51 Z" fill="rgba(36,99,235,0.3)"/>
+        <path d="M66 82 L75 91 L96 70" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title:'رعاية متكاملة وآمنة',
+    sub:'بياناتك الصحية في أمان تام\nمع أعلى معايير الخصوصية والسرية',
+  },
+];
+
+function SplashRing({size, delay, color}){
+  const sc=useRef(new Animated.Value(0.3)).current;
+  const op=useRef(new Animated.Value(0.7)).current;
+  useEffect(()=>{
+    const anim=Animated.loop(Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(sc,{toValue:1,duration:2200,useNativeDriver:false}),
+        Animated.timing(op,{toValue:0,duration:2200,useNativeDriver:false}),
+      ]),
+      Animated.parallel([
+        Animated.timing(sc,{toValue:0.3,duration:0,useNativeDriver:false}),
+        Animated.timing(op,{toValue:0.7,duration:0,useNativeDriver:false}),
+      ]),
+    ]));
+    anim.start();
+    return ()=>anim.stop();
+  },[]);
   return (
-    <View style={{alignItems:'center',borderWidth:1.5,borderColor,borderRadius:14,paddingHorizontal:28,paddingVertical:12,minWidth:200,alignSelf:'center'}}>
-      <Text style={{fontSize:13,color:textColor,fontWeight:'700',letterSpacing:0.5,marginBottom:6,fontFamily:'serif'}}>د.سالم باصفار</Text>
-      <View style={{width:'80%',height:1.5,backgroundColor:lineColor,marginBottom:6}}/>
-      <Text style={{fontSize:15,color:textColor,fontWeight:'900',letterSpacing:2}}>DR.BASAFFAR</Text>
-    </View>
+    <Animated.View style={{position:'absolute',width:size,height:size,borderRadius:size/2,borderWidth:1.5,borderColor:color,opacity:op,transform:[{scale:sc}]}}/>
   );
 }
 
 function Splash({onDone}){
-  const fa = useRef(new Animated.Value(0)).current;
+  const fa=useRef(new Animated.Value(0)).current;
+  const sc=useRef(new Animated.Value(0.8)).current;
   useEffect(()=>{
-    Animated.timing(fa,{toValue:1,duration:600,useNativeDriver:false}).start();
-    const t = setTimeout(onDone, 2000);
+    Animated.parallel([
+      Animated.timing(fa,{toValue:1,duration:700,useNativeDriver:false}),
+      Animated.spring(sc,{toValue:1,tension:60,friction:9,useNativeDriver:false}),
+    ]).start();
+    const t=setTimeout(onDone,2800);
     return ()=>clearTimeout(t);
   },[]);
   return (
-    <View style={{flex:1,backgroundColor:C.blue,alignItems:'center',justifyContent:'center'}}>
-      <Animated.View style={{opacity:fa,alignItems:'center'}}>
-        <LogoBadge dark />
-        <Text style={{fontSize:26,fontWeight:'900',color:'white',letterSpacing:2,marginTop:22}}>DR.BASAFFAR</Text>
+    <LinearGradient colors={['#0A1628','#06101E','#0D1E40']} style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+      <SplashRing size={320} delay={0}    color="rgba(36,99,235,0.25)"/>
+      <SplashRing size={220} delay={500}  color="rgba(36,99,235,0.35)"/>
+      <SplashRing size={140} delay={1000} color="rgba(36,99,235,0.45)"/>
+      <Animated.View style={{opacity:fa,transform:[{scale:sc}],alignItems:'center'}}>
+        <View style={{width:96,height:96,borderRadius:28,backgroundColor:'rgba(36,99,235,0.2)',borderWidth:1.5,borderColor:'rgba(36,99,235,0.6)',alignItems:'center',justifyContent:'center',marginBottom:28}}>
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 6 C24 6 10 12 10 26 C10 36 16 42 24 44 C32 42 38 36 38 26 C38 12 24 6 24 6Z" fill="rgba(36,99,235,0.4)" stroke="#60A5FA" strokeWidth="1.5"/>
+            <path d="M20 24 L23 27 L28 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M18 32 L30 32" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </View>
+        <Text style={{fontSize:34,fontWeight:'900',color:'white',letterSpacing:1,marginBottom:6}}>باصفار</Text>
+        <Text style={{fontSize:12,color:'rgba(96,165,250,0.8)',letterSpacing:4,fontWeight:'600',marginBottom:4}}>DR. BASAFFAR</Text>
+        <Text style={{fontSize:10,color:'rgba(255,255,255,0.3)',letterSpacing:1}}>مركز د. سالم باصفار الطبي</Text>
       </Animated.View>
-    </View>
+      <View style={{position:'absolute',bottom:52,flexDirection:'row',gap:6}}>
+        {[0,1,2].map(i=>(
+          <View key={i} style={{width:i===0?22:6,height:6,borderRadius:3,backgroundColor:i===0?C.blue:'rgba(255,255,255,0.2)'}}/>
+        ))}
+      </View>
+    </LinearGradient>
   );
 }
 
 function OnboardingScreen({onDone,onSkip}){
   const [idx,setIdx]=useState(0);
   const fa=useRef(new Animated.Value(1)).current;
-  const slide=ONBOARDING_SLIDES[idx];
+  const ty=useRef(new Animated.Value(0)).current;
+  const slide=OB_SLIDES[idx];
   const next=()=>{
-    if(idx<ONBOARDING_SLIDES.length-1){
-      Animated.timing(fa,{toValue:0,duration:180,useNativeDriver:false}).start(()=>{
+    if(idx<OB_SLIDES.length-1){
+      Animated.parallel([
+        Animated.timing(fa,{toValue:0,duration:200,useNativeDriver:false}),
+        Animated.timing(ty,{toValue:-20,duration:200,useNativeDriver:false}),
+      ]).start(()=>{
         setIdx(i=>i+1);
-        fa.setValue(0);
-        Animated.timing(fa,{toValue:1,duration:260,useNativeDriver:false}).start();
+        fa.setValue(0); ty.setValue(20);
+        Animated.parallel([
+          Animated.timing(fa,{toValue:1,duration:280,useNativeDriver:false}),
+          Animated.timing(ty,{toValue:0,duration:280,useNativeDriver:false}),
+        ]).start();
       });
-    } else {
-      onDone();
-    }
+    } else { onDone(); }
   };
   return (
-    <View style={{flex:1,backgroundColor:'#F4F8FF'}}>
-      <TouchableOpacity onPress={onSkip} style={{position:'absolute',top:52,left:20,zIndex:10,paddingHorizontal:14,paddingVertical:7}} activeOpacity={0.7}>
-        <Text style={{color:'rgba(10,22,40,0.4)',fontSize:13}}>تخطى</Text>
+    <LinearGradient colors={slide.grad} style={{flex:1}}>
+      <TouchableOpacity onPress={onSkip} style={{position:'absolute',top:52,right:24,zIndex:10,paddingHorizontal:14,paddingVertical:7,borderRadius:20,backgroundColor:'rgba(255,255,255,0.1)'}} activeOpacity={0.7}>
+        <Text style={{color:'rgba(255,255,255,0.6)',fontSize:12,fontWeight:'600'}}>تخطى</Text>
       </TouchableOpacity>
-      <Animated.View style={{flex:1,opacity:fa}}>
-        <View style={{flex:1,backgroundColor:'#F4F8FF',alignItems:'center',justifyContent:'flex-end'}}>
-          <Image source={{uri:slide.image}} style={{width:'90%',height:'82%',position:'absolute',bottom:'18%'}} resizeMode="contain"/>
+      <Animated.View style={{flex:1,alignItems:'center',justifyContent:'center',opacity:fa,transform:[{translateY:ty}]}}>
+        <View style={{width:240,height:240,borderRadius:120,backgroundColor:'rgba(255,255,255,0.05)',alignItems:'center',justifyContent:'center',marginBottom:40,borderWidth:1,borderColor:'rgba(255,255,255,0.1)'}}>
+          {slide.icon}
         </View>
-        <View style={{backgroundColor:'white',borderTopLeftRadius:32,borderTopRightRadius:32,paddingHorizontal:28,paddingTop:24,paddingBottom:44}}>
-          <Text style={{fontSize:20,fontWeight:'900',color:C.navy,textAlign:'right',lineHeight:32,marginBottom:24}}>
-            {slide.text}
-          </Text>
-          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-            <View style={{flexDirection:'row',gap:7,alignItems:'center'}}>
-              {ONBOARDING_SLIDES.map((_,i)=>(
-                <View key={i} style={{height:7,width:i===idx?22:7,borderRadius:4,backgroundColor:i===idx?C.blue:'#CBD5E1'}}/>
-              ))}
-            </View>
-            <TouchableOpacity onPress={next} style={{width:52,height:52,borderRadius:26,backgroundColor:C.blue,alignItems:'center',justifyContent:'center'}} activeOpacity={0.82}>
-              <Text style={{color:'white',fontSize:22,fontWeight:'700',marginRight:1}}>{'→'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <Text style={{fontSize:22,fontWeight:'900',color:'white',textAlign:'center',marginBottom:14,paddingHorizontal:32,lineHeight:34}}>
+          {slide.title}
+        </Text>
+        <Text style={{fontSize:13,color:'rgba(255,255,255,0.55)',textAlign:'center',lineHeight:22,paddingHorizontal:36}}>
+          {slide.sub}
+        </Text>
       </Animated.View>
-    </View>
+      <View style={{paddingHorizontal:28,paddingBottom:52,alignItems:'center',gap:28}}>
+        <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
+          {OB_SLIDES.map((_,i)=>(
+            <View key={i} style={{height:6,width:i===idx?28:6,borderRadius:3,backgroundColor:i===idx?'white':'rgba(255,255,255,0.25)'}}/>
+          ))}
+        </View>
+        <TouchableOpacity onPress={next} style={{backgroundColor:C.blue,borderRadius:50,paddingVertical:16,paddingHorizontal:56,alignItems:'center'}} activeOpacity={0.85}>
+          <Text style={{color:'white',fontSize:16,fontWeight:'800',letterSpacing:0.5}}>
+            {idx<OB_SLIDES.length-1 ? 'التالي' : 'ابدأ الآن'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
   );
 }
 
 function AuthGateScreen({onLogin,onRegister,onSkip}){
+  const fa=useRef(new Animated.Value(0)).current;
+  const sc=useRef(new Animated.Value(0.92)).current;
+  useEffect(()=>{
+    Animated.parallel([
+      Animated.timing(fa,{toValue:1,duration:500,useNativeDriver:false}),
+      Animated.spring(sc,{toValue:1,tension:55,friction:9,useNativeDriver:false}),
+    ]).start();
+  },[]);
   return (
-    <View style={{flex:1,backgroundColor:'white',alignItems:'center',justifyContent:'center',paddingHorizontal:32}}>
-      <View style={{alignItems:'center',marginBottom:40}}>
-        <LogoBadge dark={false}/>
-        <Text style={{fontSize:22,fontWeight:'900',color:C.navy,letterSpacing:1.5,marginTop:18}}>DR.BASAFFAR</Text>
-        <Text style={{fontSize:12,color:'rgba(10,22,40,0.45)',marginTop:6,textAlign:'center'}}>مركز د. سالم باصفار الطبي المتخصص</Text>
-      </View>
-      <View style={{width:'100%',gap:14}}>
-        <TouchableOpacity style={{backgroundColor:C.blue,borderRadius:50,paddingVertical:15,alignItems:'center'}} onPress={onLogin} activeOpacity={0.88}>
-          <Text style={{color:'white',fontSize:16,fontWeight:'800',letterSpacing:0.5}}>تسجيل الدخول</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={{borderWidth:1.5,borderColor:C.blue,borderRadius:50,paddingVertical:14,alignItems:'center'}} onPress={onRegister} activeOpacity={0.88}>
-          <Text style={{color:C.blue,fontSize:16,fontWeight:'700'}}>إنشاء حساب</Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity onPress={onSkip} style={{marginTop:28}} activeOpacity={0.7}>
-        <Text style={{color:'rgba(10,22,40,0.38)',fontSize:13}}>تخطى / Skip</Text>
-      </TouchableOpacity>
+    <View style={{flex:1,backgroundColor:C.navy}}>
+      <LinearGradient colors={['#0A1628','#0F2347']} style={{flex:1,alignItems:'center',justifyContent:'space-between',paddingTop:80,paddingBottom:52,paddingHorizontal:32}}>
+        <View style={{position:'absolute',top:0,left:0,right:0,bottom:0,alignItems:'center',justifyContent:'center',pointerEvents:'none'}}>
+          <View style={{width:400,height:400,borderRadius:200,backgroundColor:'rgba(36,99,235,0.06)'}}/>
+        </View>
+        <Animated.View style={{alignItems:'center',opacity:fa,transform:[{scale:sc}]}}>
+          <View style={{width:100,height:100,borderRadius:30,backgroundColor:'rgba(36,99,235,0.15)',borderWidth:1.5,borderColor:'rgba(36,99,235,0.5)',alignItems:'center',justifyContent:'center',marginBottom:24}}>
+            <svg width="50" height="50" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 6 C24 6 10 12 10 26 C10 36 16 42 24 44 C32 42 38 36 38 26 C38 12 24 6 24 6Z" fill="rgba(36,99,235,0.5)" stroke="#93C5FD" strokeWidth="1.5"/>
+              <path d="M20 24 L23 27 L28 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </View>
+          <Text style={{fontSize:30,fontWeight:'900',color:'white',letterSpacing:0.5,marginBottom:6}}>مرحباً بك</Text>
+          <Text style={{fontSize:13,color:'rgba(255,255,255,0.4)',textAlign:'center',lineHeight:20}}>مركز د. سالم باصفار الطبي المتخصص</Text>
+        </Animated.View>
+        <Animated.View style={{width:'100%',gap:14,opacity:fa}}>
+          <TouchableOpacity style={{backgroundColor:C.blue,borderRadius:50,paddingVertical:16,alignItems:'center',boxShadow:'0 4px 24px rgba(36,99,235,0.4)'}} onPress={onLogin} activeOpacity={0.88}>
+            <Text style={{color:'white',fontSize:16,fontWeight:'800',letterSpacing:0.5}}>تسجيل الدخول</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{borderWidth:1.5,borderColor:'rgba(255,255,255,0.25)',borderRadius:50,paddingVertical:15,alignItems:'center'}} onPress={onRegister} activeOpacity={0.88}>
+            <Text style={{color:'white',fontSize:16,fontWeight:'600'}}>إنشاء حساب جديد</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onSkip} style={{alignItems:'center',paddingVertical:8}} activeOpacity={0.7}>
+            <Text style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>تخطى الآن</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </LinearGradient>
     </View>
   );
 }
