@@ -199,7 +199,7 @@ router.post('/register', registerLimiter, async (req, res) => {
   };
   db.users.push(user);
   if (!db.clients) db.clients = [];
-  db.clients.push({ id: user.id, name, email, phone, idNum: idNum || null, bookings: 0, joinedAt: user.createdAt });
+  db.clients.push({ id: user.id, name, email, phone, idNum: idNum || null, age: age || null, nationality: nationality || null, bookings: 0, joinedAt: user.createdAt });
 
   const rawRefresh = crypto.randomBytes(40).toString('hex');
   createSession(db, user.id, rawRefresh, req);
@@ -316,7 +316,7 @@ router.get('/me', requireAuth, (req, res) => {
   if (!user) return res.status(404).json({ ok: false, msg: 'المستخدم غير موجود' });
   res.json({
     ok: true,
-    user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, emailVerified: user.emailVerified, createdAt: user.createdAt },
+    user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, emailVerified: user.emailVerified, createdAt: user.createdAt, age: user.age || null, idNum: user.idNum || null, nationality: user.nationality || null },
   });
 });
 

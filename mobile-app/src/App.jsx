@@ -1257,7 +1257,7 @@ function ProfileScreen({onBack,userName,userEmail,emailVerified,onVerifiedUpdate
     apiFetch('/auth/me').then(res=>{
       if(res?.ok) {
         const u=res.user;
-        setV(p=>({...p,name:u.name||'',email:u.email||'',phone:u.phone||''}));
+        setV(p=>({...p,name:u.name||'',email:u.email||'',phone:u.phone||'',age:u.age||'',nat:u.nationality||'',id:u.idNum||''}));
       }
       setLoading(false);
     });

@@ -142,7 +142,7 @@ app.get('/api/stats', requireAuth, (req, res) => {
   res.json({
     bookingsToday:   db.bookings.filter(b => b.date === new Date().toISOString().slice(0, 10)).length,
     bookingsTotal:   db.bookings.length,
-    clientsTotal:    db.clients.length,
+    clientsTotal:    Math.max(db.clients.length, (db.users||[]).filter(u=>u.role==='user').length),
     offersActive:    db.offers.filter(o => o.active).length,
     pendingBookings: db.bookings.filter(b => b.status === 'pending').length,
   });
@@ -271,7 +271,26 @@ app.delete('/api/bookings/:id', ...requireRole('admin', 'super_admin'), (req, re
 
 // ─── CLIENTS (admin only) ──────────────────────────────────────────────────────
 app.get('/api/clients', ...requireRole('admin', 'super_admin'), (req, res) => {
-  const db = readDB(); res.json([...db.clients].reverse());
+  const db = readDB();
+  // Build a map of existing clients keyed by id for quick lookup
+  const clientMap = {};
+  (db.clients || []).forEach(c => { clientMap[c.id] = c; });
+  // Merge db.users (registered via auth) into clients so none are missed
+  (db.users || []).filter(u => u.role === 'user').forEach(u => {
+    if (!clientMap[u.id]) {
+      // User registered but not yet in clients list — add them now
+      clientMap[u.id] = { id: u.id, name: u.name, email: u.email, phone: u.phone, idNum: u.idNum || null, age: u.age || null, nationality: u.nationality || null, bookings: u.bookings || 0, joinedAt: u.createdAt };
+    } else {
+      // Enrich existing client entry with fields that may be missing
+      const c = clientMap[u.id];
+      if (!c.age        && u.age)         c.age         = u.age;
+      if (!c.nationality && u.nationality) c.nationality = u.nationality;
+      if (!c.idNum      && u.idNum)        c.idNum       = u.idNum;
+      if (!c.email      && u.email)        c.email       = u.email;
+    }
+  });
+  const merged = Object.values(clientMap).sort((a, b) => new Date(b.joinedAt) - new Date(a.joinedAt));
+  res.json(merged);
 });
 
 // ─── NOTIFICATIONS ─────────────────────────────────────────────────────────────
