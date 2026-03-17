@@ -374,14 +374,16 @@ function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,use
           <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={e=>setBi(Math.round(e.nativeEvent.contentOffset.x/BW))}>
             {localBanners.map(b=>(
-              <LinearGradient key={b.id} colors={b.color} style={{width:BW,height:158,alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-                <View style={{position:'absolute',width:130,height:130,borderRadius:65,borderWidth:1,borderColor:'rgba(36,99,235,0.12)',top:-35,left:-35}}/>
-                <View style={{backgroundColor:'rgba(36,99,235,0.2)',borderWidth:1,borderColor:'rgba(36,99,235,0.4)',borderRadius:10,paddingHorizontal:10,paddingVertical:3,marginBottom:8}}>
-                  <Text style={{fontSize:9,color:C.blue}}>{b.tag}</Text>
-                </View>
-                <Text style={{fontSize:22,fontWeight:'900',color:'white',marginBottom:4}}>{b.title}</Text>
-                <Text style={{fontSize:10,color:'rgba(255,255,255,0.6)'}}>{b.subtitle}</Text>
-              </LinearGradient>
+              b.image
+                ? <Image key={b.id} source={{uri:b.image}} style={{width:BW,height:158}} resizeMode="cover"/>
+                : <LinearGradient key={b.id} colors={b.color||['#0A1628','#1A3A6B']} style={{width:BW,height:158,alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+                    <View style={{position:'absolute',width:130,height:130,borderRadius:65,borderWidth:1,borderColor:'rgba(36,99,235,0.12)',top:-35,left:-35}}/>
+                    <View style={{backgroundColor:'rgba(36,99,235,0.2)',borderWidth:1,borderColor:'rgba(36,99,235,0.4)',borderRadius:10,paddingHorizontal:10,paddingVertical:3,marginBottom:8}}>
+                      <Text style={{fontSize:9,color:C.blue}}>{b.tag}</Text>
+                    </View>
+                    <Text style={{fontSize:22,fontWeight:'900',color:'white',marginBottom:4}}>{b.title}</Text>
+                    <Text style={{fontSize:10,color:'rgba(255,255,255,0.6)'}}>{b.subtitle}</Text>
+                  </LinearGradient>
             ))}
           </ScrollView>
           <LinearGradient colors={[C.navy,C.navyM]} style={{flexDirection:'row',justifyContent:'center',gap:5,paddingVertical:8}}>
@@ -410,8 +412,8 @@ function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,use
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:14,gap:12}}>
           {localOffers.slice(0,5).map(o=>(
             <TouchableOpacity key={o.id} style={{width:158,borderRadius:16,overflow:'hidden',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD}} onPress={()=>onOffer(o)} activeOpacity={0.87}>
-              <LinearGradient colors={o.color} style={{height:98,alignItems:'center',justifyContent:'center'}}>
-                <Text style={{fontSize:32}}>{o.icon}</Text>
+              <LinearGradient colors={o.color||['#0A1628','#1A3A6B']} style={{height:98,alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
+                {o.image?<Image source={{uri:o.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>:<Text style={{fontSize:32}}>{o.icon}</Text>}
                 <View style={{position:'absolute',top:8,right:8,backgroundColor:'rgba(36,99,235,0.85)',borderRadius:8,paddingHorizontal:7,paddingVertical:2}}>
                   <Text style={{fontSize:9,fontWeight:'700',color:'white'}}>{o.dept}</Text>
                 </View>
@@ -433,8 +435,8 @@ function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,use
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:16,gap:12}}>
           {localDoctors.map(d=>(
             <TouchableOpacity key={d.id} style={{width:128,borderRadius:16,overflow:'hidden',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD}} onPress={()=>onDoctor(d)} activeOpacity={0.87}>
-              <LinearGradient colors={d.color} style={{height:88,alignItems:'center',justifyContent:'center'}}>
-                <Text style={{fontSize:38}}>{d.emoji}</Text>
+              <LinearGradient colors={d.color||['#0A1628','#1A3A6B']} style={{height:88,alignItems:'center',justifyContent:'center',position:'relative'}}>
+                {d.image?<Image source={{uri:d.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>:<Text style={{fontSize:38}}>{d.emoji||'👨‍⚕️'}</Text>}
               </LinearGradient>
               <View style={{padding:8}}>
                 <Text style={{fontSize:11,fontWeight:'700',color:C.navy}}>{d.name}</Text>
@@ -480,7 +482,8 @@ function OffersScreen({onOffer,offers:propOffers}){
       <ScrollView contentContainerStyle={{paddingHorizontal:16}} showsVerticalScrollIndicator={false}>
         {list.map(o=>(
           <TouchableOpacity key={o.id} style={{marginBottom:14,borderRadius:20,overflow:'hidden',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD}} onPress={()=>onOffer(o)} activeOpacity={0.88}>
-            <LinearGradient colors={o.color} style={{height:158,alignItems:'center',justifyContent:'center',padding:20}}>
+            <LinearGradient colors={o.color||['#0A1628','#1A3A6B']} style={{height:158,alignItems:'center',justifyContent:'center',padding:20,position:'relative',overflow:'hidden'}}>
+              {o.image&&<Image source={{uri:o.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
               <View style={{position:'absolute',width:120,height:120,borderRadius:60,borderWidth:1,borderColor:'rgba(36,99,235,0.1)',top:-30,left:-30}}/>
               <Text style={{fontSize:20,fontWeight:'900',color:C.blue,marginBottom:5,textAlign:'center'}}>
                 {o.dept==='أسنان'?'عروض الأسنان':o.dept==='جلدية'?'عروض الجلدية':o.dept==='عيون'?'عروض العيون':'عروض التجميل'}
@@ -514,13 +517,14 @@ function OfferDetail({offer:o,onBack,onAdd}){
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
       <BB title="تفاصيل العرض" onBack={onBack}/>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={o.color} style={{height:225,alignItems:'center',justifyContent:'center',padding:20,overflow:'hidden'}}>
+        <LinearGradient colors={o.color||['#0A1628','#1A3A6B']} style={{height:225,alignItems:'center',justifyContent:'center',padding:20,overflow:'hidden',position:'relative'}}>
+          {o.image&&<Image source={{uri:o.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
           <View style={{position:'absolute',width:150,height:150,borderRadius:75,borderWidth:1,borderColor:'rgba(36,99,235,0.12)',top:-40,left:-40}}/>
           <Text style={{fontSize:20,fontWeight:'900',color:C.blue,marginBottom:6}}>
             {o.dept==='أسنان'?'عروض الأسنان':o.dept==='جلدية'?'عروض الجلدية':o.dept==='عيون'?'عروض العيون':'عروض التجميل'}
           </Text>
           <Text style={{fontSize:15,fontWeight:'600',color:'white',textAlign:'center',lineHeight:24}}>{o.name}</Text>
-          <Text style={{fontSize:42,marginTop:10}}>{o.icon}</Text>
+          {!o.image&&<Text style={{fontSize:42,marginTop:10}}>{o.icon}</Text>}
         </LinearGradient>
         <View style={{padding:18}}>
           <View style={{flexDirection:'row',alignItems:'baseline',gap:8,marginBottom:16}}>

@@ -403,6 +403,16 @@ tr:hover td{background:rgba(240,246,255,.6)}
   <div class="modal wide">
     <div class="mh"><div class="mt" id="m-offer-title">إضافة عرض جديد</div><button class="mc" onclick="closeModal('m-offer')">×</button></div>
     <div class="mb">
+      <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:14px">
+        <div style="flex-shrink:0;text-align:center">
+          <div style="width:86px;height:86px;border-radius:14px;overflow:hidden;border:2px solid var(--bg3);background:var(--bg2);display:flex;align-items:center;justify-content:center;position:relative">
+            <img id="of-prev-img" src="" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none">
+            <span id="of-prev-icon" style="font-size:38px">🎁</span>
+          </div>
+          <div style="font-size:9px;color:var(--txt-l);margin-top:5px">صورة العرض</div>
+        </div>
+        <div class="upload-zone" style="flex:1;min-height:86px"><input type="file" accept="image/*" onchange="previewOfferFile(this)"><div class="uz-ico">📤</div><div class="uz-lbl">رفع صورة العرض</div><div class="uz-sub">JPG PNG · 400×300px</div></div>
+      </div>
       <div class="fg">
         <div class="fw fc"><div class="fl">اسم العرض *</div><input class="fi" id="of-name" placeholder="مثال: زراعة الأسنان + تركيبة الزيركون"></div>
         <div class="fw"><div class="fl">القسم *</div><select class="fs" id="of-dept"><option>الأسنان</option><option>الجلدية</option><option>العيون</option><option>التجميل</option></select></div>
@@ -424,6 +434,16 @@ tr:hover td{background:rgba(240,246,255,.6)}
   <div class="modal wide">
     <div class="mh"><div class="mt" id="m-doctor-title">إضافة طبيب جديد</div><button class="mc" onclick="closeModal('m-doctor')">×</button></div>
     <div class="mb">
+      <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:14px">
+        <div style="flex-shrink:0;text-align:center">
+          <div style="width:86px;height:86px;border-radius:50%;overflow:hidden;border:2px solid var(--bg3);background:var(--bg2);display:flex;align-items:center;justify-content:center;position:relative">
+            <img id="dr-prev-img" src="" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none">
+            <span id="dr-prev-emoji" style="font-size:38px">👨‍⚕️</span>
+          </div>
+          <div style="font-size:9px;color:var(--txt-l);margin-top:5px">صورة الطبيب</div>
+        </div>
+        <div class="upload-zone" style="flex:1;min-height:86px"><input type="file" accept="image/*" onchange="previewDoctorFile(this)"><div class="uz-ico">📤</div><div class="uz-lbl">رفع صورة الطبيب</div><div class="uz-sub">JPG PNG · 300×300px</div></div>
+      </div>
       <div class="fg">
         <div class="fw"><div class="fl">الاسم الكامل *</div><input class="fi" id="dr-name" placeholder="د. اسم الطبيب"></div>
         <div class="fw"><div class="fl">التخصص *</div><input class="fi" id="dr-spec" placeholder="مثال: أسنان وزراعة"></div>
@@ -483,13 +503,18 @@ tr:hover td{background:rgba(240,246,255,.6)}
 
 <!-- BANNER MODAL -->
 <div class="ov" id="m-banner">
-  <div class="modal">
+  <div class="modal wide">
     <div class="mh"><div class="mt" id="m-banner-title">إضافة بنر جديد</div><button class="mc" onclick="closeModal('m-banner')">×</button></div>
     <div class="mb">
+      <div style="border-radius:12px;overflow:hidden;width:100%;height:150px;background:var(--bg2);margin-bottom:14px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bg3);position:relative">
+        <img id="bn-prev-img" src="" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none">
+        <span id="bn-prev-ph" style="font-size:40px;opacity:.25">🖼️</span>
+      </div>
       <div class="fg">
-        <div class="fw fc"><div class="fl">عنوان البنر *</div><input class="fi" id="bn-title" placeholder="مثال: عروض رمضان الكريم"></div>
-        <div class="fw fc"><div class="fl">النص الفرعي</div><input class="fi" id="bn-sub" placeholder="مثال: خصومات تصل إلى 30%"></div>
-        <div class="fw fc"><div class="fl">التاق / الوسم</div><input class="fi" id="bn-tag" placeholder="مثال: قسم الأسنان 🦷"></div>
+        <div class="fw fc"><div class="fl">اسم البنر (للتعرف عليه في لوحة التحكم)</div><input class="fi" id="bn-name" placeholder="مثال: بنر رمضان"></div>
+        <div class="fw fc"><div class="fl">صورة البنر *</div>
+          <div class="upload-zone"><input type="file" accept="image/*" onchange="previewBannerFile(this)"><div class="uz-ico">📤</div><div class="uz-lbl">رفع صورة البنر</div><div class="uz-sub">JPG PNG · العرض المثالي: 900×320px</div></div>
+        </div>
       </div>
     </div>
     <div class="mf"><button class="btn btn-out" onclick="closeModal('m-banner')">إلغاء</button><button class="btn btn-gold" onclick="saveBanner()">💾 حفظ</button></div>
@@ -586,6 +611,9 @@ const API = '/api';
 let _delCallback = null;
 let _editIds = {};
 let _data = { offers:[], doctors:[], depts:[], banners:[], branches:[], bookings:[], clients:[], notifs:[] };
+let _bannerImg = '';
+let _doctorImg = '';
+let _offerImg  = '';
 
 async function apiFetch(method, path, body) {
   try {
@@ -631,12 +659,22 @@ function openModal(id, title, isEdit, data) {
       document.getElementById('of-desc').value  = data.desc  || '';
       const d = document.getElementById('of-dept');
       for (let o of d.options) if (o.text === data.dept) { o.selected = true; break; }
+      _offerImg = data.image || '';
+      const ofImg = document.getElementById('of-prev-img');
+      const ofIco = document.getElementById('of-prev-icon');
+      if (data.image) { ofImg.src = data.image; ofImg.style.display='block'; ofIco.style.display='none'; }
+      else { ofImg.style.display='none'; ofIco.style.display=''; }
     }
     if (id === 'm-doctor') {
       document.getElementById('dr-name').value = data.name || '';
       document.getElementById('dr-spec').value = data.spec || '';
       document.getElementById('dr-exp').value  = data.exp  || '';
       document.getElementById('dr-bio').value  = data.bio  || '';
+      _doctorImg = data.image || '';
+      const drImg = document.getElementById('dr-prev-img');
+      const drEmo = document.getElementById('dr-prev-emoji');
+      if (data.image) { drImg.src = data.image; drImg.style.display='block'; drEmo.style.display='none'; }
+      else { drImg.style.display='none'; drEmo.style.display=''; }
     }
     if (id === 'm-dept') {
       document.getElementById('dp-name-ar').value = data.label || '';
@@ -648,6 +686,14 @@ function openModal(id, title, isEdit, data) {
         document.getElementById('dp-clr1').value = data.color[0] || '#0A1628';
         document.getElementById('dp-clr2').value = data.color[1] || '#1A3A6B';
       }
+    }
+    if (id === 'm-banner') {
+      document.getElementById('bn-name').value = data.name || data.title || '';
+      _bannerImg = data.image || '';
+      const bnImg = document.getElementById('bn-prev-img');
+      const bnPh  = document.getElementById('bn-prev-ph');
+      if (data.image) { bnImg.src = data.image; bnImg.style.display='block'; bnPh.style.display='none'; }
+      else { bnImg.style.display='none'; bnPh.style.display=''; }
     }
     if (id === 'm-branch') {
       document.getElementById('br-name').value  = data.name  || '';
@@ -700,7 +746,7 @@ async function saveOffer() {
   if (!name)  { shake('of-name');  toast('⚠️ يرجى إدخال اسم العرض'); return; }
   if (!price) { shake('of-price'); toast('⚠️ يرجى إدخال السعر'); return; }
 
-  const payload = { name, price:Number(price), orig:Number(orig)||Number(price), desc, dept, icon:icons[dept]||'🎁', active };
+  const payload = { name, price:Number(price), orig:Number(orig)||Number(price), desc, dept, icon:icons[dept]||'🎁', image:_offerImg||'', active };
   const editId = _editIds['m-offer'];
   let result;
   if (editId) {
@@ -710,6 +756,7 @@ async function saveOffer() {
     result = await POST('/offers', payload);
     toast('✓ تمت إضافة العرض "'+name+'"');
   }
+  _offerImg = '';
   closeModal('m-offer');
   clearForm(['of-name','of-price','of-price-orig','of-desc']);
   await loadOffers();
@@ -728,16 +775,17 @@ async function saveDoctor() {
   const dept = deptEl.options[deptEl.selectedIndex].text;
   const emojis = ['👨‍⚕️','👩‍⚕️'];
   const colors = [['#0A1628','#1A3A6B'],['#0D2154','#1A4A8A'],['#0A1840','#102060'],['#0D1840','#1A2870']];
-  const payload = { name, spec:spec||'طبيب متخصص', exp, bio, dept, emoji:emojis[Math.floor(Math.random()*2)], color:colors[Math.floor(Math.random()*4)], branches:['الرياض'], active:true };
+  const payload = { name, spec:spec||'طبيب متخصص', exp, bio, dept, image:_doctorImg||'', emoji:emojis[Math.floor(Math.random()*2)], color:colors[Math.floor(Math.random()*4)], branches:['الرياض'], active:true };
 
   const editId = _editIds['m-doctor'];
   if (editId) {
-    await PUT('/doctors/'+editId, { name, spec, exp, bio });
+    await PUT('/doctors/'+editId, { name, spec, exp, bio, image:_doctorImg||undefined });
     toast('✓ تم تحديث "'+name+'"');
   } else {
     await POST('/doctors', payload);
     toast('✓ تمت إضافة "'+name+'"');
   }
+  _doctorImg = '';
   closeModal('m-doctor');
   clearForm(['dr-name','dr-spec','dr-exp','dr-bio']);
   await loadDoctors();
@@ -770,20 +818,23 @@ async function saveDept() {
 }
 
 async function saveBanner() {
-  const title = document.getElementById('bn-title').value.trim();
-  const sub   = document.getElementById('bn-sub').value.trim();
-  const tag   = document.getElementById('bn-tag').value.trim();
-  if (!title) { shake('bn-title'); toast('⚠️ يرجى إدخال عنوان البنر'); return; }
+  const name = document.getElementById('bn-name').value.trim() || ('بنر '+Date.now()).slice(-8);
+  if (!_bannerImg) { toast('⚠️ يرجى رفع صورة البنر'); return; }
   const editId = _editIds['m-banner'];
   if (editId) {
-    await PUT('/banners/'+editId, { title, subtitle:sub, tag, active:true });
-    toast('✓ تم تحديث البنر "'+title+'"');
+    await PUT('/banners/'+editId, { name, image:_bannerImg, active:true });
+    toast('✓ تم تحديث البنر');
   } else {
-    await POST('/banners', { title, subtitle:sub, tag, color:['#0A1628','#1A3A6B'], active:true, order:99 });
-    toast('✓ تمت إضافة البنر "'+title+'"');
+    await POST('/banners', { name, image:_bannerImg, active:true, order:99 });
+    toast('✓ تمت إضافة البنر');
   }
+  _bannerImg = '';
   closeModal('m-banner');
-  clearForm(['bn-title','bn-sub','bn-tag']);
+  clearForm(['bn-name']);
+  const bnImg = document.getElementById('bn-prev-img');
+  if (bnImg) { bnImg.src=''; bnImg.style.display='none'; }
+  const bnPh = document.getElementById('bn-prev-ph');
+  if (bnPh) bnPh.style.display='';
   await loadBanners();
 }
 
@@ -909,7 +960,7 @@ async function loadOffers() {
   const deptClass = {أسنان:'gold',جلدية:'blu',عيون:'gray',تجميل:'red'};
   const rows = d.map(o => `<tr data-dept="${o.dept}">
     <td><input type="checkbox"></td>
-    <td><div class="tbl-img">${o.icon||'🎁'}</div></td>
+    <td><div class="tbl-img" style="position:relative;overflow:hidden">${o.image?`<img src="${o.image}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">`:o.icon||'🎁'}</div></td>
     <td><div class="tbl-name">${o.name}</div><div class="tbl-sub">${o.dept}</div></td>
     <td><span class="bx ${deptClass[o.dept]||'gray'}">${o.dept}</span></td>
     <td style="text-decoration:line-through;color:var(--txt-l)">${o.orig||o.price} ﷼</td>
@@ -940,7 +991,9 @@ async function loadDoctors() {
     card.className='card'; card.style.margin='0';
     const bg = `linear-gradient(135deg,${doc.color?doc.color[0]:'#0A1628'},${doc.color?doc.color[1]:'#1A3A6B'})`;
     card.innerHTML=`
-      <div style="height:90px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:46px">${doc.emoji||'👨‍⚕️'}</div>
+      <div style="height:90px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:46px;position:relative;overflow:hidden">
+        ${doc.image?`<img src="${doc.image}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">`:`<span>${doc.emoji||'👨‍⚕️'}</span>`}
+      </div>
       <div class="card-b">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
           <div><div style="font-size:13px;font-weight:700;color:var(--br)">${doc.name}</div><div style="font-size:10px;color:var(--txt-l)">${doc.spec||''} · ${doc.exp||'?'} سنة</div></div>
@@ -998,12 +1051,14 @@ async function loadBanners() {
   if (!list) return;
   list.innerHTML = d.map(b=>`
     <div class="banner-item">
-      <div class="banner-thumb" style="background:linear-gradient(135deg,${b.color?b.color[0]:'#0A1628'},${b.color?b.color[1]:'#1A3A6B'})">🖼️</div>
-      <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--br)">${b.title}</div><div style="font-size:10px;color:var(--txt-l)">${b.subtitle||''}</div></div>
+      <div class="banner-thumb" style="overflow:hidden;position:relative;background:var(--bg2)">
+        ${b.image?`<img src="${b.image}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">`:'<span style="font-size:22px;display:flex;align-items:center;justify-content:center;height:100%">🖼️</span>'}
+      </div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--br)">${b.name||b.title||'بنر'}</div><div style="font-size:10px;color:var(--txt-l)">${b.image?'✓ صورة مرفوعة':'لا توجد صورة'}</div></div>
       <div style="display:flex;gap:6px">
         <span class="bx grn">نشط</span>
         <button class="btn btn-out btn-xs" onclick="openModal('m-banner','تعديل البنر',true,${JSON.stringify(b).replace(/"/g,"'")})">✏️</button>
-        <button class="btn btn-red btn-xs" onclick="confirmDel('${b.title}',async()=>{await DEL('/banners/${b.id}');await loadBanners();toast('✓ تم الحذف');})">🗑️</button>
+        <button class="btn btn-red btn-xs" onclick="confirmDel('${b.name||b.title||'البنر'}',async()=>{await DEL('/banners/${b.id}');await loadBanners();toast('✓ تم الحذف');})">🗑️</button>
       </div>
     </div>`).join('') || '<p style="color:var(--txt-l);text-align:center;padding:20px">لا توجد بنرات</p>';
 }
@@ -1178,6 +1233,45 @@ function previewDeptFile(input) {
   reader.onload = e => {
     document.getElementById('dp-prev-img').src = e.target.result;
     document.getElementById('dp-img-url').value = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function previewBannerFile(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _bannerImg = e.target.result;
+    const img = document.getElementById('bn-prev-img');
+    const ph  = document.getElementById('bn-prev-ph');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    if (ph) ph.style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function previewDoctorFile(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _doctorImg = e.target.result;
+    const img = document.getElementById('dr-prev-img');
+    const emo = document.getElementById('dr-prev-emoji');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    if (emo) emo.style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function previewOfferFile(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _offerImg = e.target.result;
+    const img = document.getElementById('of-prev-img');
+    const ico = document.getElementById('of-prev-icon');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    if (ico) ico.style.display = 'none';
   };
   reader.readAsDataURL(input.files[0]);
 }
