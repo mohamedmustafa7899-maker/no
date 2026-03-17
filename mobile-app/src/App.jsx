@@ -175,7 +175,7 @@ export default function App() {
     // Handle Replit OAuth callback — server redirects to /?replitAuth=1
     if (typeof window !== 'undefined' && window.location.search.includes('replitAuth=1')) {
       apiFetch('/auth/me').then(res => {
-        if (res?.ok) applyUser(res.user);
+        if (res?.ok) { applyUser(res.user); go('tabs'); }
         window.history.replaceState({}, '', window.location.pathname);
         setIsCheckingAuth(false);
       }).catch(() => setIsCheckingAuth(false));
@@ -192,16 +192,17 @@ export default function App() {
         const meRes = await apiFetch('/auth/me');
         if (meRes?.ok) {
           applyUser(meRes.user);
+          go('tabs');
         } else {
           // Try refresh before giving up
           const refreshRes = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
           if (refreshRes.ok) {
             const me2 = await apiFetch('/auth/me');
-            if (me2?.ok) applyUser(me2.user);
+            if (me2?.ok) { applyUser(me2.user); go('tabs'); }
           }
-          // If refresh also failed — user stays logged out (already default state)
+          // If refresh also failed — user stays logged out, splash/onboarding flow continues
         }
-      } catch(e) { /* network error — stay logged out */ }
+      } catch(e) { /* network error — stay logged out, onboarding flow continues */ }
       setIsCheckingAuth(false);
     };
     checkAuth();
@@ -238,10 +239,10 @@ export default function App() {
   const removeFromCart = (id) => setCart(c => c.filter(i => i.cartId !== id));
   const clearCart = () => setCart([]);
 
-  if (isCheckingAuth) return <AuthLoadingScreen />;
   if (screen==='splash')      return <Splash onDone={()=>go('onboarding')} />;
-  if (screen==='onboarding')  return <OnboardingScreen onDone={()=>go('authGate')} />;
+  if (screen==='onboarding')  return <OnboardingScreen onDone={()=>go('authGate')} onSkip={()=>go('tabs')} />;
   if (screen==='authGate')    return <AuthGateScreen onLogin={()=>go('login')} onRegister={()=>go('register')} onSkip={()=>go('tabs')} />;
+  if (isCheckingAuth) return <AuthLoadingScreen />;
   if (screen==='offerDetail') return <OfferDetail offer={param} onBack={()=>go('tabs')} onAdd={(o,q,b)=>{addToCart(o,q,b);goTab('cart');}} />;
   if (screen==='doctorDetail') return <DoctorDetail doctor={param} onBack={()=>go('tabs')} onBook={()=>goTab('booking')} />;
   if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} onLogin={(u)=>{handleLogin(u);go('tabs');}} onRegister={()=>go('register')} onForgotPassword={()=>go('forgotPassword')} />;
@@ -347,7 +348,7 @@ function Splash({onDone}){
   const fa = useRef(new Animated.Value(0)).current;
   useEffect(()=>{
     Animated.timing(fa,{toValue:1,duration:600,useNativeDriver:false}).start();
-    const t = setTimeout(onDone, 2200);
+    const t = setTimeout(onDone, 2000);
     return ()=>clearTimeout(t);
   },[]);
   return (
@@ -360,7 +361,7 @@ function Splash({onDone}){
   );
 }
 
-function OnboardingScreen({onDone}){
+function OnboardingScreen({onDone,onSkip}){
   const [idx,setIdx]=useState(0);
   const fa=useRef(new Animated.Value(1)).current;
   const slide=ONBOARDING_SLIDES[idx];
@@ -377,12 +378,14 @@ function OnboardingScreen({onDone}){
   };
   return (
     <View style={{flex:1,backgroundColor:'#F4F8FF'}}>
+      <TouchableOpacity onPress={onSkip} style={{position:'absolute',top:52,left:20,zIndex:10,paddingHorizontal:14,paddingVertical:7}} activeOpacity={0.7}>
+        <Text style={{color:'rgba(10,22,40,0.4)',fontSize:13}}>تخطى</Text>
+      </TouchableOpacity>
       <Animated.View style={{flex:1,opacity:fa}}>
-        <View style={{flex:1,alignItems:'center',justifyContent:'flex-end',paddingBottom:0}}>
-          <Image source={{uri:slide.image}} style={{width:'100%',height:'100%',position:'absolute',top:0,left:0}} resizeMode="cover"/>
-          <View style={{position:'absolute',bottom:0,left:0,right:0,height:220,backgroundColor:'white',borderTopLeftRadius:32,borderTopRightRadius:32}}/>
+        <View style={{flex:1,backgroundColor:'#F4F8FF',alignItems:'center',justifyContent:'flex-end'}}>
+          <Image source={{uri:slide.image}} style={{width:'90%',height:'82%',position:'absolute',bottom:'18%'}} resizeMode="contain"/>
         </View>
-        <View style={{backgroundColor:'white',paddingHorizontal:28,paddingTop:20,paddingBottom:44}}>
+        <View style={{backgroundColor:'white',borderTopLeftRadius:32,borderTopRightRadius:32,paddingHorizontal:28,paddingTop:24,paddingBottom:44}}>
           <Text style={{fontSize:20,fontWeight:'900',color:C.navy,textAlign:'right',lineHeight:32,marginBottom:24}}>
             {slide.text}
           </Text>
