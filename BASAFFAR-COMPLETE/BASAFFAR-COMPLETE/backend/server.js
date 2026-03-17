@@ -1,32 +1,80 @@
-const express  = require('express');
-const cors     = require('cors');
-const fs       = require('fs');
-const path     = require('path');
+const express      = require('express');
+const cors         = require('cors');
+const cookieParser = require('cookie-parser');
+const fs           = require('fs');
+const path         = require('path');
 const { router: authRouter } = require('./auth');
+const { requireAuth, requireRole, requireAdminDashboard, IS_PROD } = require('./authMiddleware');
 
 const app  = express();
 const PORT = 3000;
 const DB   = path.join(__dirname, 'db.json');
 
-app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+// ─── Environment validation ───────────────────────────────────────────────────
+if (IS_PROD) {
+  const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'APP_URL'];
+  const missing  = required.filter(k => !process.env[k]);
+  if (missing.length) {
+    console.error('[FATAL] Missing required env vars in production:', missing.join(', '));
+    process.exit(1);
+  }
+}
+if (!process.env.JWT_SECRET)         console.warn('[WARN] JWT_SECRET not set — using random dev secret (NOT safe for production)');
+if (!process.env.JWT_REFRESH_SECRET) console.warn('[WARN] JWT_REFRESH_SECRET not set — using random dev secret');
+if (!process.env.APP_URL)            console.warn('[WARN] APP_URL not set — email links will point to localhost:3000');
 
-// ─── Security headers ────────────────────────────────────────────────────────
+// ─── CORS — credentials + specific origins ───────────────────────────────────
+const ALLOWED_ORIGINS = IS_PROD
+  ? [process.env.APP_URL, process.env.ADMIN_URL].filter(Boolean)
+  : ['http://localhost:5000', 'http://localhost:3000'];
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
+
+// ─── Security headers ─────────────────────────────────────────────────────────
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), camera=()');
+  if (IS_PROD) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   next();
 });
 
-// Serve dashboard static files
-app.use(express.static(path.join(__dirname, '../dashboard')));
+// ─── Request logger ───────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString().slice(11, 19)} ${req.method} ${req.path}`);
+  next();
+});
 
-// ─── Auth routes (secure) ─────────────────────────────────────────────────────
+// ─── Auth routes (public — login, register, refresh, etc.) ───────────────────
 app.use('/api/auth', authRouter);
 
-// ─── DB helpers ────────────────────────────────────────
+// ─── Admin login page (serves standalone login for the dashboard) ─────────────
+app.get('/admin-login', (req, res) => {
+  res.send(`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>دخول الإدارة</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#0A1628;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}.card{background:#0F2347;border-radius:20px;padding:36px 28px;max-width:380px;width:100%;border:1px solid rgba(36,99,235,0.25)}h2{color:white;text-align:center;margin-bottom:6px;font-size:18px}.sub{color:rgba(255,255,255,0.4);font-size:12px;text-align:center;margin-bottom:28px}label{display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);margin-bottom:5px;text-align:right}input{width:100%;padding:12px;border:1px solid rgba(36,99,235,0.3);border-radius:12px;font-size:14px;color:white;background:rgba(36,99,235,0.08);margin-bottom:14px;outline:none}button{width:100%;padding:14px;background:#2463EB;color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer}.msg{text-align:center;margin-top:14px;font-size:12px;color:#FF8080}</style></head><body><div class="card"><h2>🔒 دخول لوحة التحكم</h2><p class="sub">DR BASAFFAR Admin Dashboard</p><form id="f"><label>البريد الإلكتروني</label><input type="email" id="em" required placeholder="admin@basaffar.com"/><label>كلمة المرور</label><input type="password" id="pw" required/><button type="submit">دخول</button></form><p class="msg" id="msg"></p></div><script>document.getElementById('f').addEventListener('submit',async(e)=>{e.preventDefault();const msg=document.getElementById('msg');msg.textContent='';const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:document.getElementById('em').value,password:document.getElementById('pw').value,captchaId:'',captchaAnswer:''})});const d=await r.json();if(d.ok){if(['admin','super_admin'].includes(d.user?.role)){window.location.href='/';}else{msg.textContent='ليس لديك صلاحية الوصول للوحة التحكم';}}else{msg.textContent=d.msg||'خطأ في البيانات';}});</script></body></html>`);
+});
+
+// ─── Serve dashboard static assets (CSS, JS, images — no auth needed) ─────────
+app.use(express.static(path.join(__dirname, '../dashboard'), { index: false }));
+
+// ─── Dashboard HTML — protected (admin/super_admin only) ─────────────────────
+app.get('/', requireAdminDashboard, (req, res) => {
+  res.sendFile(path.join(__dirname, '../dashboard/alshakreen-dashboard.html'));
+});
+
+// ─── DB helpers ────────────────────────────────────────────────────────────────
 function readDB() {
   if (!fs.existsSync(DB)) writeDB(defaultDB());
   return JSON.parse(fs.readFileSync(DB, 'utf8'));
@@ -69,316 +117,189 @@ function defaultDB() {
       { id:2, name:'جدة — حي الروضة',    nameEn:'Jeddah - Al-Rawdah', city:'جدة',   addr:'شارع التحلية، حي الروضة',        phone:'012-345-6789', hours:'9 ص – 11 م', open:true,  depts:['أسنان','تجميل'],         active:true },
       { id:3, name:'الدمام — العزيزية',  nameEn:'Dammam - Al-Aziziya', city:'الدمام',addr:'طريق الأمير محمد بن فهد',        phone:'013-456-7890', hours:'9 ص – 10 م', open:false, depts:['أسنان','جلدية'],          active:true },
     ],
-    bookings: [],
-    clients: [],
-    notifications: [],
+    bookings: [], clients: [], notifications: [], sessions: [], auditLog: [],
     settings: {
-      appNameAr: 'باصفار',
-      appNameEn: 'DR BASAFFAR',
+      appNameAr: 'باصفار', appNameEn: 'DR BASAFFAR',
       tagline: 'مركز د. حسالم باصفار الطبي المتخصص',
-      primaryColor: '#2463EB',
-      phone: '+966501234567',
-      email: 'info@basaffar.com',
-      website: 'www.basaffar.com',
-      enableBooking: true,
-      enableCart: true,
-      enableNotifications: true,
+      primaryColor: '#2463EB', phone: '+966501234567', email: 'info@basaffar.com',
+      website: 'www.basaffar.com', enableBooking: true, enableCart: true, enableNotifications: true,
     },
     nextId: { depts:6, offers:9, doctors:5, banners:4, branches:4, bookings:1, clients:1, notifications:1 },
   };
 }
 
 function nextId(db, key) {
-  const id = db.nextId[key];
-  db.nextId[key] = id + 1;
-  return id;
+  const id = db.nextId[key]; db.nextId[key] = id + 1; return id;
 }
 
-// ─── MIDDLEWARE ─────────────────────────────────────────
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString().slice(11,19)} ${req.method} ${req.path}`);
-  next();
-});
-
-// ─── STATS ─────────────────────────────────────────────
-app.get('/api/stats', (req, res) => {
+// ─── STATS ─────────────────────────────────────────────────────────────────────
+app.get('/api/stats', requireAuth, (req, res) => {
   const db = readDB();
   res.json({
-    bookingsToday:  db.bookings.filter(b => b.date === new Date().toISOString().slice(0,10)).length,
-    bookingsTotal:  db.bookings.length,
-    clientsTotal:   db.clients.length,
-    offersActive:   db.offers.filter(o => o.active).length,
-    pendingBookings:db.bookings.filter(b => b.status === 'pending').length,
+    bookingsToday:   db.bookings.filter(b => b.date === new Date().toISOString().slice(0, 10)).length,
+    bookingsTotal:   db.bookings.length,
+    clientsTotal:    db.clients.length,
+    offersActive:    db.offers.filter(o => o.active).length,
+    pendingBookings: db.bookings.filter(b => b.status === 'pending').length,
   });
 });
 
-// ─── DEPTS ─────────────────────────────────────────────
+// ─── DEPTS (public read, auth write) ─────────────────────────────────────────
 app.get('/api/depts', (req, res) => {
-  const db = readDB();
-  const list = db.depts.sort((a,b)=>a.order-b.order);
-  res.json(list);
+  const db = readDB(); res.json(db.depts.sort((a, b) => a.order - b.order));
+});
+app.post('/api/depts', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const dept = { ...req.body, id: nextId(db, 'depts'), createdAt: new Date().toISOString() };
+  db.depts.push(dept); writeDB(db); res.json({ ok: true, dept });
+});
+app.put('/api/depts/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const idx = db.depts.findIndex(d => d.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ ok: false, msg: 'not found' });
+  db.depts[idx] = { ...db.depts[idx], ...req.body }; writeDB(db); res.json({ ok: true, dept: db.depts[idx] });
+});
+app.delete('/api/depts/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); db.depts = db.depts.filter(d => d.id !== Number(req.params.id));
+  writeDB(db); res.json({ ok: true });
 });
 
-app.post('/api/depts', (req, res) => {
-  const db = readDB();
-  const dept = { ...req.body, id: nextId(db,'depts'), createdAt: new Date().toISOString() };
-  db.depts.push(dept);
-  writeDB(db);
-  res.json({ ok:true, dept });
-});
-
-app.put('/api/depts/:id', (req, res) => {
-  const db = readDB();
-  const idx = db.depts.findIndex(d => d.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok:false, msg:'not found' });
-  db.depts[idx] = { ...db.depts[idx], ...req.body };
-  writeDB(db);
-  res.json({ ok:true, dept: db.depts[idx] });
-});
-
-app.delete('/api/depts/:id', (req, res) => {
-  const db = readDB();
-  db.depts = db.depts.filter(d => d.id !== Number(req.params.id));
-  writeDB(db);
-  res.json({ ok:true });
-});
-
-// ─── OFFERS ────────────────────────────────────────────
+// ─── OFFERS (public read, auth write) ─────────────────────────────────────────
 app.get('/api/offers', (req, res) => {
-  const db = readDB();
-  const { dept } = req.query;
-  let list = db.offers;
-  if (dept && dept !== 'all') list = list.filter(o => o.dept === dept);
+  const db = readDB(); const { dept } = req.query;
+  let list = db.offers; if (dept && dept !== 'all') list = list.filter(o => o.dept === dept);
   res.json(list);
 });
-
-app.post('/api/offers', (req, res) => {
-  const db = readDB();
-  const offer = { ...req.body, id: nextId(db,'offers'), createdAt: new Date().toISOString() };
-  db.offers.push(offer);
-  writeDB(db);
-  res.json({ ok:true, offer });
+app.post('/api/offers', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const offer = { ...req.body, id: nextId(db, 'offers'), createdAt: new Date().toISOString() };
+  db.offers.push(offer); writeDB(db); res.json({ ok: true, offer });
+});
+app.put('/api/offers/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const idx = db.offers.findIndex(o => o.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ ok: false });
+  db.offers[idx] = { ...db.offers[idx], ...req.body }; writeDB(db); res.json({ ok: true, offer: db.offers[idx] });
+});
+app.delete('/api/offers/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); db.offers = db.offers.filter(o => o.id !== Number(req.params.id));
+  writeDB(db); res.json({ ok: true });
 });
 
-app.put('/api/offers/:id', (req, res) => {
-  const db = readDB();
-  const idx = db.offers.findIndex(o => o.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok:false });
-  db.offers[idx] = { ...db.offers[idx], ...req.body };
-  writeDB(db);
-  res.json({ ok:true, offer: db.offers[idx] });
-});
-
-app.delete('/api/offers/:id', (req, res) => {
-  const db = readDB();
-  db.offers = db.offers.filter(o => o.id !== Number(req.params.id));
-  writeDB(db);
-  res.json({ ok:true });
-});
-
-// ─── DOCTORS ───────────────────────────────────────────
+// ─── DOCTORS (public read, auth write) ─────────────────────────────────────────
 app.get('/api/doctors', (req, res) => {
-  const db = readDB();
-  res.json(db.doctors.filter(d => d.active !== false));
+  const db = readDB(); res.json(db.doctors.filter(d => d.active !== false));
+});
+app.post('/api/doctors', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const doc = { ...req.body, id: nextId(db, 'doctors'), createdAt: new Date().toISOString() };
+  db.doctors.push(doc); writeDB(db); res.json({ ok: true, doctor: doc });
+});
+app.put('/api/doctors/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const idx = db.doctors.findIndex(d => d.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ ok: false });
+  db.doctors[idx] = { ...db.doctors[idx], ...req.body }; writeDB(db); res.json({ ok: true, doctor: db.doctors[idx] });
+});
+app.delete('/api/doctors/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); db.doctors = db.doctors.filter(d => d.id !== Number(req.params.id));
+  writeDB(db); res.json({ ok: true });
 });
 
-app.post('/api/doctors', (req, res) => {
-  const db = readDB();
-  const doc = { ...req.body, id: nextId(db,'doctors'), createdAt: new Date().toISOString() };
-  db.doctors.push(doc);
-  writeDB(db);
-  res.json({ ok:true, doctor: doc });
-});
-
-app.put('/api/doctors/:id', (req, res) => {
-  const db = readDB();
-  const idx = db.doctors.findIndex(d => d.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok:false });
-  db.doctors[idx] = { ...db.doctors[idx], ...req.body };
-  writeDB(db);
-  res.json({ ok:true, doctor: db.doctors[idx] });
-});
-
-app.delete('/api/doctors/:id', (req, res) => {
-  const db = readDB();
-  db.doctors = db.doctors.filter(d => d.id !== Number(req.params.id));
-  writeDB(db);
-  res.json({ ok:true });
-});
-
-// ─── BANNERS ───────────────────────────────────────────
+// ─── BANNERS (public read, auth write) ─────────────────────────────────────────
 app.get('/api/banners', (req, res) => {
-  const db = readDB();
-  res.json(db.banners.filter(b=>b.active).sort((a,b)=>a.order-b.order));
+  const db = readDB(); res.json(db.banners.filter(b => b.active).sort((a, b) => a.order - b.order));
+});
+app.post('/api/banners', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const banner = { ...req.body, id: nextId(db, 'banners'), createdAt: new Date().toISOString() };
+  db.banners.push(banner); writeDB(db); res.json({ ok: true, banner });
+});
+app.put('/api/banners/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const idx = db.banners.findIndex(b => b.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ ok: false });
+  db.banners[idx] = { ...db.banners[idx], ...req.body }; writeDB(db); res.json({ ok: true, banner: db.banners[idx] });
+});
+app.delete('/api/banners/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); db.banners = db.banners.filter(b => b.id !== Number(req.params.id));
+  writeDB(db); res.json({ ok: true });
 });
 
-app.post('/api/banners', (req, res) => {
-  const db = readDB();
-  const banner = { ...req.body, id: nextId(db,'banners'), createdAt: new Date().toISOString() };
-  db.banners.push(banner);
-  writeDB(db);
-  res.json({ ok:true, banner });
-});
-
-app.put('/api/banners/:id', (req, res) => {
-  const db = readDB();
-  const idx = db.banners.findIndex(b => b.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok:false });
-  db.banners[idx] = { ...db.banners[idx], ...req.body };
-  writeDB(db);
-  res.json({ ok:true, banner: db.banners[idx] });
-});
-
-app.delete('/api/banners/:id', (req, res) => {
-  const db = readDB();
-  db.banners = db.banners.filter(b => b.id !== Number(req.params.id));
-  writeDB(db);
-  res.json({ ok:true });
-});
-
-// ─── BRANCHES ──────────────────────────────────────────
+// ─── BRANCHES (public read, auth write) ─────────────────────────────────────────
 app.get('/api/branches', (req, res) => {
-  const db = readDB();
-  res.json(db.branches.filter(b=>b.active));
+  const db = readDB(); res.json(db.branches.filter(b => b.active));
+});
+app.post('/api/branches', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const branch = { ...req.body, id: nextId(db, 'branches'), createdAt: new Date().toISOString() };
+  db.branches.push(branch); writeDB(db); res.json({ ok: true, branch });
+});
+app.put('/api/branches/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const idx = db.branches.findIndex(b => b.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ ok: false });
+  db.branches[idx] = { ...db.branches[idx], ...req.body }; writeDB(db); res.json({ ok: true, branch: db.branches[idx] });
+});
+app.delete('/api/branches/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); db.branches = db.branches.filter(b => b.id !== Number(req.params.id));
+  writeDB(db); res.json({ ok: true });
 });
 
-app.post('/api/branches', (req, res) => {
-  const db = readDB();
-  const branch = { ...req.body, id: nextId(db,'branches'), createdAt: new Date().toISOString() };
-  db.branches.push(branch);
-  writeDB(db);
-  res.json({ ok:true, branch });
-});
-
-app.put('/api/branches/:id', (req, res) => {
-  const db = readDB();
-  const idx = db.branches.findIndex(b => b.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok:false });
-  db.branches[idx] = { ...db.branches[idx], ...req.body };
-  writeDB(db);
-  res.json({ ok:true, branch: db.branches[idx] });
-});
-
-app.delete('/api/branches/:id', (req, res) => {
-  const db = readDB();
-  db.branches = db.branches.filter(b => b.id !== Number(req.params.id));
-  writeDB(db);
-  res.json({ ok:true });
-});
-
-// ─── BOOKINGS ──────────────────────────────────────────
-app.get('/api/bookings', (req, res) => {
-  const db = readDB();
-  const { status } = req.query;
+// ─── BOOKINGS ──────────────────────────────────────────────────────────────────
+app.get('/api/bookings', requireAuth, (req, res) => {
+  const db = readDB(); const { status } = req.query;
   let list = [...db.bookings].reverse();
   if (status) list = list.filter(b => b.status === status);
   res.json(list);
 });
-
-app.post('/api/bookings', (req, res) => {
-  const db = readDB();
-  const id = nextId(db,'bookings');
-  const code = 'BK-' + String(3000 + id).padStart(4,'0');
-  const booking = {
-    ...req.body,
-    id,
-    code,
-    status: 'pending',
-    date: new Date().toISOString().slice(0,10),
-    createdAt: new Date().toISOString(),
-  };
+app.post('/api/bookings', requireAuth, (req, res) => {
+  const db = readDB(); const id = nextId(db, 'bookings');
+  const code = 'BK-' + String(3000 + id).padStart(4, '0');
+  const booking = { ...req.body, id, code, status: 'pending', date: new Date().toISOString().slice(0, 10), createdAt: new Date().toISOString() };
   db.bookings.push(booking);
-
-  // add/update client
   if (req.body.phone) {
-    const existing = db.clients.find(c => c.phone === req.body.phone);
-    if (existing) {
-      existing.bookings = (existing.bookings || 0) + 1;
-    } else {
-      db.clients.push({
-        id: nextId(db,'clients'),
-        name: req.body.name,
-        phone: req.body.phone,
-        idNum: req.body.idNum,
-        bookings: 1,
-        joinedAt: new Date().toISOString(),
-      });
-    }
+    const ex = db.clients.find(c => c.phone === req.body.phone);
+    if (ex) { ex.bookings = (ex.bookings || 0) + 1; }
+    else db.clients.push({ id: nextId(db, 'clients'), name: req.body.name, phone: req.body.phone, idNum: req.body.idNum, bookings: 1, joinedAt: new Date().toISOString() });
   }
-
-  writeDB(db);
-  res.json({ ok:true, booking });
+  writeDB(db); res.json({ ok: true, booking });
+});
+app.put('/api/bookings/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); const idx = db.bookings.findIndex(b => b.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ ok: false });
+  db.bookings[idx] = { ...db.bookings[idx], ...req.body }; writeDB(db); res.json({ ok: true, booking: db.bookings[idx] });
+});
+app.delete('/api/bookings/:id', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); db.bookings = db.bookings.filter(b => b.id !== Number(req.params.id));
+  writeDB(db); res.json({ ok: true });
 });
 
-app.put('/api/bookings/:id', (req, res) => {
+// ─── CLIENTS (admin only) ──────────────────────────────────────────────────────
+app.get('/api/clients', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); res.json([...db.clients].reverse());
+});
+
+// ─── NOTIFICATIONS ─────────────────────────────────────────────────────────────
+app.get('/api/notifications', requireAuth, (req, res) => {
+  const db = readDB(); res.json([...db.notifications].reverse());
+});
+app.post('/api/notifications', ...requireRole('admin', 'super_admin'), (req, res) => {
   const db = readDB();
-  const idx = db.bookings.findIndex(b => b.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok:false });
-  db.bookings[idx] = { ...db.bookings[idx], ...req.body };
-  writeDB(db);
-  res.json({ ok:true, booking: db.bookings[idx] });
+  const notif = { ...req.body, id: nextId(db, 'notifications'), sentAt: new Date().toISOString(), reach: db.clients.length || 1284 };
+  db.notifications.push(notif); writeDB(db); res.json({ ok: true, notification: notif });
 });
 
-app.delete('/api/bookings/:id', (req, res) => {
-  const db = readDB();
-  db.bookings = db.bookings.filter(b => b.id !== Number(req.params.id));
-  writeDB(db);
-  res.json({ ok:true });
-});
-
-// ─── CLIENTS ───────────────────────────────────────────
-app.get('/api/clients', (req, res) => {
-  const db = readDB();
-  res.json([...db.clients].reverse());
-});
-
-// ─── NOTIFICATIONS ─────────────────────────────────────
-app.get('/api/notifications', (req, res) => {
-  const db = readDB();
-  res.json([...db.notifications].reverse());
-});
-
-app.post('/api/notifications', (req, res) => {
-  const db = readDB();
-  const notif = {
-    ...req.body,
-    id: nextId(db,'notifications'),
-    sentAt: new Date().toISOString(),
-    reach: db.clients.length || 1284,
-  };
-  db.notifications.push(notif);
-  writeDB(db);
-  res.json({ ok:true, notification: notif });
-});
-
-// ─── SETTINGS ──────────────────────────────────────────
+// ─── SETTINGS ──────────────────────────────────────────────────────────────────
 app.get('/api/settings', (req, res) => {
-  const db = readDB();
-  res.json(db.settings);
+  const db = readDB(); res.json(db.settings);
+});
+app.put('/api/settings', ...requireRole('admin', 'super_admin'), (req, res) => {
+  const db = readDB(); db.settings = { ...db.settings, ...req.body };
+  writeDB(db); res.json({ ok: true, settings: db.settings });
 });
 
-app.put('/api/settings', (req, res) => {
-  const db = readDB();
-  db.settings = { ...db.settings, ...req.body };
-  writeDB(db);
-  res.json({ ok:true, settings: db.settings });
-});
+// ─── HEALTH CHECK ───────────────────────────────────────────────────────────────
+app.get('/api/ping', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
-// ─── HEALTH CHECK ───────────────────────────────────────
-app.get('/api/ping', (req, res) => res.json({ ok:true, time: new Date().toISOString() }));
-
-// ─── DASHBOARD ROOT ─────────────────────────────────────
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dashboard/alshakreen-dashboard.html'));
-});
-
-// ─── START ──────────────────────────────────────────────
+// ─── START ──────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
-  readDB(); // ensure db exists
+  readDB();
   console.log('\n╔══════════════════════════════════════╗');
   console.log(`║  DR BASAFFAR API  →  port ${PORT}       ║`);
   console.log('╠══════════════════════════════════════╣');
-  console.log('║  Dashboard: open dashboard.html      ║');
+  console.log('║  Dashboard: localhost:3000 (admin)   ║');
   console.log(`║  App API:   http://YOUR_IP:${PORT}/api  ║`);
+  console.log(`║  Mode: ${IS_PROD ? 'PRODUCTION' : 'development'}                  ║`);
   console.log('╚══════════════════════════════════════╝\n');
 });

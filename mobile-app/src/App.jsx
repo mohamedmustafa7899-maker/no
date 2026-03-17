@@ -7,8 +7,6 @@ import {
 import { LinearGradient } from './LinearGradient';
 
 const API_URL = '/api';
-const TOKEN_KEY = 'basaffar_auth_token';
-const USER_KEY  = 'basaffar_auth_user';
 
 const webAlert = (title, msg, buttons) => {
   if (Platform.OS === 'web') {
@@ -27,61 +25,48 @@ const webAlert = (title, msg, buttons) => {
   }
 };
 
-function getStoredToken() {
-  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
-}
-function storeAuth(token, user) {
-  try {
-    if (token) { localStorage.setItem(TOKEN_KEY, token); localStorage.setItem(USER_KEY, JSON.stringify(user)); }
-    else { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); }
-  } catch {}
-}
-function getStoredUser() {
-  try { const u = localStorage.getItem(USER_KEY); return u ? JSON.parse(u) : null; } catch { return null; }
+// ─── Cookie-based API layer with automatic token refresh on 401 ───────────────
+let _refreshing = null; // deduplicate concurrent refresh calls
+
+async function _makeRequest(method, path, body) {
+  const opts = { method, credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  return fetch(API_URL + path, opts);
 }
 
-function authHeaders() {
-  const token = getStoredToken();
-  return token
-    ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
-    : { 'Content-Type': 'application/json' };
+async function apiRequest(method, path, body) {
+  try {
+    let res = await _makeRequest(method, path, body);
+    if (res.status === 401) {
+      // Try refreshing the access token once
+      if (!_refreshing) {
+        _refreshing = fetch(API_URL + '/auth/refresh', { method: 'POST', credentials: 'include' })
+          .finally(() => { _refreshing = null; });
+      }
+      const refreshRes = await _refreshing;
+      if (refreshRes && refreshRes.ok) {
+        res = await _makeRequest(method, path, body);
+      } else {
+        return { _sessionExpired: true };
+      }
+    }
+    return await res.json();
+  } catch (e) {
+    console.warn('[API]', method, path, e.message);
+    return null;
+  }
 }
 
-async function apiFetch(path) {
+async function apiFetch(path)        { return apiRequest('GET',    path);       }
+async function apiPost(path, body)   { return apiRequest('POST',   path, body); }
+async function apiPut(path, body)    { return apiRequest('PUT',    path, body); }
+async function apiDelete(path)       { return apiRequest('DELETE', path);       }
+
+async function fetchCaptcha() {
   try {
-    const res = await fetch(API_URL + path, { headers: authHeaders() });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const res = await fetch(API_URL + '/auth/captcha', { credentials: 'include' });
     return await res.json();
-  } catch (e) {
-    console.warn('[API]', path, e.message);
-    return null;
-  }
-}
-async function apiPost(path, body) {
-  try {
-    const res = await fetch(API_URL + path, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify(body),
-    });
-    return await res.json();
-  } catch (e) {
-    console.warn('[API POST]', path, e.message);
-    return null;
-  }
-}
-async function apiPut(path, body) {
-  try {
-    const res = await fetch(API_URL + path, {
-      method: 'PUT',
-      headers: authHeaders(),
-      body: JSON.stringify(body),
-    });
-    return await res.json();
-  } catch (e) {
-    console.warn('[API PUT]', path, e.message);
-    return null;
-  }
+  } catch { return null; }
 }
 
 const { width } = Dimensions.get('window');
@@ -141,6 +126,7 @@ export default function App() {
   const [userName,      setUserName]      = useState('');
   const [userEmail,     setUserEmail]     = useState('');
   const [emailVerified, setEmailVerified] = useState(false);
+  const [userRole,      setUserRole]      = useState('user');
 
   const [apiDepts,   setApiDepts]   = useState(DEPTS);
   const [apiOffers,  setApiOffers]  = useState(OFFERS);
@@ -149,29 +135,23 @@ export default function App() {
   const [apiBranches,setApiBranches]= useState(BRANCHES_LIST);
   const [apiLoaded,  setApiLoaded]  = useState(false);
 
+  const clearAuthState = () => {
+    setLoggedIn(false); setUserName(''); setUserEmail(''); setEmailVerified(false); setUserRole('user');
+  };
+
   useEffect(() => {
-    // Restore auth state from localStorage
-    const stored = getStoredUser();
-    const token  = getStoredToken();
-    if (stored && token) {
-      setLoggedIn(true);
-      setUserName(stored.name || '');
-      setUserEmail(stored.email || '');
-      setEmailVerified(stored.emailVerified || false);
-      // Verify token is still valid with server
-      apiFetch('/auth/me').then(res => {
-        if (res?.ok) {
-          setUserName(res.user.name);
-          setUserEmail(res.user.email);
-          setEmailVerified(res.user.emailVerified);
-          storeAuth(token, res.user);
-        } else {
-          // Token expired or invalid — log out
-          storeAuth(null, null);
-          setLoggedIn(false); setUserName(''); setUserEmail(''); setEmailVerified(false);
-        }
-      });
-    }
+    // Check auth state via httpOnly cookie (no localStorage needed)
+    apiFetch('/auth/me').then(res => {
+      if (res?.ok) {
+        setLoggedIn(true);
+        setUserName(res.user.name || '');
+        setUserEmail(res.user.email || '');
+        setEmailVerified(res.user.emailVerified || false);
+        setUserRole(res.user.role || 'user');
+      } else if (res?._sessionExpired) {
+        clearAuthState();
+      }
+    });
 
     const loadData = async () => {
       const [depts, offers, doctors, banners, branches] = await Promise.all([
@@ -191,16 +171,17 @@ export default function App() {
     loadData();
   }, []);
 
-  const handleLogin = (user, token) => {
-    storeAuth(token, user);
+  const handleLogin = (user) => {
+    // Token is now in httpOnly cookie set by server
     setLoggedIn(true);
     setUserName(user.name || '');
     setUserEmail(user.email || '');
     setEmailVerified(user.emailVerified || false);
+    setUserRole(user.role || 'user');
   };
-  const handleLogout = () => {
-    storeAuth(null, null);
-    setLoggedIn(false); setUserName(''); setUserEmail(''); setEmailVerified(false);
+  const handleLogout = async () => {
+    await apiPost('/auth/logout', {});
+    clearAuthState();
   };
 
   const go = (s, p=null) => { setScreen(s); setParam(p); };
@@ -214,8 +195,8 @@ export default function App() {
   if (screen==='splash') return <Splash onDone={()=>go('tabs')} />;
   if (screen==='offerDetail') return <OfferDetail offer={param} onBack={()=>go('tabs')} onAdd={(o,q,b)=>{addToCart(o,q,b);goTab('cart');}} />;
   if (screen==='doctorDetail') return <DoctorDetail doctor={param} onBack={()=>go('tabs')} onBook={()=>goTab('booking')} />;
-  if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} onLogin={(user,token)=>{handleLogin(user,token);go('tabs');}} onRegister={()=>go('register')} onForgot={()=>go('forgotPassword')} />;
-  if (screen==='register') return <RegisterScreen onBack={()=>go('login')} onDone={(user,token)=>{handleLogin(user,token);go('tabs');}} />;
+  if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} onLogin={(user)=>{handleLogin(user);go('tabs');}} onRegister={()=>go('register')} onForgot={()=>go('forgotPassword')} />;
+  if (screen==='register') return <RegisterScreen onBack={()=>go('login')} onDone={(user)=>{handleLogin(user);go('tabs');}} />;
   if (screen==='forgotPassword') return <ForgotPasswordScreen onBack={()=>go('login')} />;
   if (screen==='branches') return <BranchesScreen onBack={()=>go('tabs')} branches={apiBranches} />;
   if (screen==='profile') return <ProfileScreen onBack={()=>go('tabs')} userName={userName} userEmail={userEmail} emailVerified={emailVerified} onVerifiedUpdate={()=>setEmailVerified(true)} />;
@@ -835,23 +816,55 @@ function DoctorDetail({doctor:d,onBack,onBook}){
   );
 }
 
+function CaptchaField({captcha,onRefresh,value,onChange}){
+  return(
+    <View style={{marginBottom:14,width:'100%'}}>
+      <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:6,textAlign:'right'}}>التحقق من الهوية</Text>
+      <View style={{flexDirection:'row',gap:8,marginBottom:8,alignItems:'center'}}>
+        <TouchableOpacity onPress={onRefresh} style={{padding:8,backgroundColor:C.bgD,borderRadius:10}}>
+          <Text style={{fontSize:15}}>🔄</Text>
+        </TouchableOpacity>
+        <View style={{flex:1,backgroundColor:C.navy,padding:12,borderRadius:12,alignItems:'center',justifyContent:'center',minHeight:44}}>
+          <Text style={{color:'white',fontWeight:'800',fontSize:15,letterSpacing:1}}>{captcha?.question||'جارٍ التحميل...'}</Text>
+        </View>
+      </View>
+      <TextInput
+        style={{backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:11,fontSize:13,color:C.txt}}
+        placeholder="أدخل الجواب هنا"
+        value={value}
+        onChangeText={onChange}
+        keyboardType="number-pad"
+        textAlign="right"
+        placeholderTextColor={C.txtL}
+      />
+    </View>
+  );
+}
+
 function LoginScreen({onBack,onLogin,onRegister,onForgot}){
   const [em,setEm]=useState('');
   const [pw,setPw]=useState('');
   const [loading,setLoading]=useState(false);
   const [err,setErr]=useState('');
   const [showPw,setShowPw]=useState(false);
+  const [captcha,setCaptcha]=useState(null);
+  const [captchaAns,setCaptchaAns]=useState('');
+
+  useEffect(()=>{ loadCaptcha(); },[]);
+  const loadCaptcha=async()=>{ setCaptchaAns(''); const c=await fetchCaptcha(); setCaptcha(c); };
+
   const login=async()=>{
     setErr('');
     if(!em.trim()){setErr('يرجى إدخال البريد الإلكتروني');return;}
     if(!pw.trim()){setErr('يرجى إدخال كلمة المرور');return;}
     setLoading(true);
-    const res = await apiPost('/auth/login', { email:em.trim(), password:pw });
+    const res = await apiPost('/auth/login', { email:em.trim(), password:pw, captchaId:captcha?.id, captchaAnswer:captchaAns });
     setLoading(false);
     if (res?.ok) {
-      onLogin(res.user, res.token);
+      onLogin(res.user);
     } else {
       setErr(res?.msg || 'حدث خطأ، حاول مرة أخرى');
+      if(res?.msg?.includes('التحقق')) loadCaptcha();
     }
   };
   return(
@@ -880,9 +893,12 @@ function LoginScreen({onBack,onLogin,onRegister,onForgot}){
             <TextInput style={{flex:1,padding:12,fontSize:13,color:C.txt}} placeholder="أدخل كلمة المرور" value={pw} onChangeText={v=>{setPw(v);setErr('');}} secureTextEntry={!showPw} textAlign="right" placeholderTextColor={C.txtL}/>
           </View>
         </View>
-        <TouchableOpacity style={{alignSelf:'flex-start',marginBottom:22}} onPress={onForgot}>
+        <TouchableOpacity style={{alignSelf:'flex-start',marginBottom:20}} onPress={onForgot}>
           <Text style={{fontSize:11,color:C.blue,fontWeight:'600'}}>نسيت كلمة المرور؟</Text>
         </TouchableOpacity>
+
+        <CaptchaField captcha={captcha} onRefresh={loadCaptcha} value={captchaAns} onChange={v=>{setCaptchaAns(v);setErr('');}}/>
+
         <TouchableOpacity style={{width:'100%'}} onPress={login} activeOpacity={0.85} disabled={loading}>
           <LinearGradient colors={loading?['#6B86AA','#4A6090']:[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center',width:'100%'}}>
             <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ التحقق...':'تسجيل الدخول'}</Text>
@@ -921,6 +937,11 @@ function RegisterScreen({onBack,onDone}){
   };
   const strength=pwStrength(v.pass);
 
+  const [captcha,setCaptcha]=useState(null);
+  const [captchaAns,setCaptchaAns]=useState('');
+  useEffect(()=>{ loadCaptcha(); },[]);
+  const loadCaptcha=async()=>{ setCaptchaAns(''); const c=await fetchCaptcha(); setCaptcha(c); };
+
   const reg=async()=>{
     setErr('');
     if(!v.name.trim()){setErr('يرجى إدخال الاسم الكامل');return;}
@@ -931,12 +952,13 @@ function RegisterScreen({onBack,onDone}){
     if(pwErr){setErr(pwErr);return;}
     if(v.pass!==v.pass2){setErr('كلمتا المرور غير متطابقتين');return;}
     setLoading(true);
-    const res = await apiPost('/auth/register', { name:v.name.trim(), email:v.email.trim(), phone:v.phone.trim(), password:v.pass, age:v.age, idNum:v.id });
+    const res = await apiPost('/auth/register', { name:v.name.trim(), email:v.email.trim(), phone:v.phone.trim(), password:v.pass, age:v.age, idNum:v.id, captchaId:captcha?.id, captchaAnswer:captchaAns });
     setLoading(false);
     if (res?.ok) {
-      onDone(res.user, res.token);
+      onDone(res.user);
     } else {
       setErr(res?.msg || 'حدث خطأ، حاول مرة أخرى');
+      if(res?.msg?.includes('التحقق')) loadCaptcha();
     }
   };
   return(
@@ -984,6 +1006,8 @@ function RegisterScreen({onBack,onDone}){
           <Text style={{fontSize:11,color:C.blueD,textAlign:'right',lineHeight:18}}>📧 سيتم إرسال رابط التحقق إلى بريدك الإلكتروني بعد إنشاء الحساب.</Text>
         </View>
 
+        <CaptchaField captcha={captcha} onRefresh={loadCaptcha} value={captchaAns} onChange={val=>{setCaptchaAns(val);setErr('');}}/>
+
         <TouchableOpacity onPress={reg} activeOpacity={0.85} disabled={loading} style={{marginTop:4}}>
           <LinearGradient colors={loading?['#6B86AA','#4A6090']:[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center'}}>
             <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ الإنشاء...':'إنشاء الحساب'}</Text>
@@ -1000,16 +1024,21 @@ function ForgotPasswordScreen({onBack}){
   const [loading,setLoading]=useState(false);
   const [sent,setSent]=useState(false);
   const [err,setErr]=useState('');
+  const [captcha,setCaptcha]=useState(null);
+  const [captchaAns,setCaptchaAns]=useState('');
+
+  useEffect(()=>{ loadCaptcha(); },[]);
+  const loadCaptcha=async()=>{ setCaptchaAns(''); const c=await fetchCaptcha(); setCaptcha(c); };
 
   const send=async()=>{
     setErr('');
     const emailRx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if(!email.trim()||!emailRx.test(email.trim())){setErr('يرجى إدخال بريد إلكتروني صحيح');return;}
     setLoading(true);
-    const res=await apiPost('/auth/forgot-password',{email:email.trim()});
+    const res=await apiPost('/auth/forgot-password',{email:email.trim(),captchaId:captcha?.id,captchaAnswer:captchaAns});
     setLoading(false);
     if(res?.ok) setSent(true);
-    else setErr(res?.msg||'حدث خطأ، حاول لاحقاً');
+    else{ setErr(res?.msg||'حدث خطأ، حاول لاحقاً'); if(res?.msg?.includes('التحقق')) loadCaptcha(); }
   };
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
@@ -1030,10 +1059,11 @@ function ForgotPasswordScreen({onBack}){
         ):(
           <>
             {err?<View style={{width:'100%',backgroundColor:C.redL,borderRadius:10,padding:10,marginBottom:12}}><Text style={{fontSize:12,color:C.red,textAlign:'right'}}>{err}</Text></View>:null}
-            <View style={{width:'100%',marginBottom:20}}>
+            <View style={{width:'100%',marginBottom:16}}>
               <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>البريد الإلكتروني</Text>
               <TextInput style={{width:'100%',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,padding:12,fontSize:13,color:C.txt}} placeholder="example@email.com" value={email} onChangeText={v=>{setEmail(v);setErr('');}} keyboardType="email-address" textAlign="right" placeholderTextColor={C.txtL} autoCapitalize="none"/>
             </View>
+            <CaptchaField captcha={captcha} onRefresh={loadCaptcha} value={captchaAns} onChange={v=>{setCaptchaAns(v);setErr('');}}/>
             <TouchableOpacity style={{width:'100%'}} onPress={send} disabled={loading} activeOpacity={0.85}>
               <LinearGradient colors={loading?['#6B86AA','#4A6090']:[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center',width:'100%'}}>
                 <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ الإرسال...':'إرسال رابط الاسترداد'}</Text>
@@ -1091,6 +1121,10 @@ function ProfileScreen({onBack,userName,userEmail,emailVerified,onVerifiedUpdate
   const [pwErr,setPwErr]=useState('');
   const [pwOk,setPwOk]=useState('');
   const [resendSent,setResendSent]=useState(false);
+  const [sessions,setSessions]=useState([]);
+  const [sessionsLoading,setSessionsLoading]=useState(false);
+  const [logoutAllLoading,setLogoutAllLoading]=useState(false);
+  const [revoking,setRevoking]=useState(null);
 
   useEffect(()=>{
     apiFetch('/auth/me').then(res=>{
@@ -1100,7 +1134,29 @@ function ProfileScreen({onBack,userName,userEmail,emailVerified,onVerifiedUpdate
       }
       setLoading(false);
     });
+    loadSessions();
   },[]);
+
+  const loadSessions=async()=>{
+    setSessionsLoading(true);
+    const res=await apiFetch('/auth/sessions');
+    if(res?.ok) setSessions(res.sessions||[]);
+    setSessionsLoading(false);
+  };
+
+  const revokeSession=async(id)=>{
+    setRevoking(id);
+    await apiDelete('/auth/sessions/'+id);
+    setSessions(s=>s.filter(x=>x.id!==id));
+    setRevoking(null);
+  };
+
+  const logoutAll=async()=>{
+    setLogoutAllLoading(true);
+    await apiPost('/auth/logout-all',{});
+    setLogoutAllLoading(false);
+    onBack();
+  };
 
   const changePassword=async()=>{
     setPwErr('');setPwOk('');
@@ -1118,6 +1174,17 @@ function ProfileScreen({onBack,userName,userEmail,emailVerified,onVerifiedUpdate
     if(!userEmail) return;
     await apiPost('/auth/resend-verification',{email:userEmail});
     setResendSent(true);
+  };
+
+  const fmtDate=(iso)=>{
+    if(!iso) return '';
+    const d=new Date(iso);
+    return d.toLocaleString('ar-SA',{dateStyle:'short',timeStyle:'short'});
+  };
+  const shortUA=(ua='')=>{
+    if(!ua) return 'جهاز غير معروف';
+    if(/mobile/i.test(ua)) return '📱 ' + (ua.match(/\(([^)]+)\)/)?.[1]||'هاتف').slice(0,30);
+    return '💻 ' + ua.slice(0,40);
   };
 
   return(
@@ -1167,6 +1234,37 @@ function ProfileScreen({onBack,userName,userEmail,emailVerified,onVerifiedUpdate
             </LinearGradient>
           </TouchableOpacity>
         </View>
+
+        <View style={{backgroundColor:C.white,borderRadius:16,padding:16,marginBottom:16,borderWidth:1,borderColor:C.bgD}}>
+          <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <TouchableOpacity onPress={loadSessions} style={{padding:4}}>
+              <Text style={{fontSize:14}}>🔄</Text>
+            </TouchableOpacity>
+            <Text style={{fontSize:13,fontWeight:'700',color:C.navy}}>🖥️ الجلسات النشطة</Text>
+          </View>
+          {sessionsLoading?(
+            <Text style={{textAlign:'center',color:C.txtL,fontSize:12}}>جارٍ التحميل...</Text>
+          ):(
+            sessions.length===0?
+              <Text style={{textAlign:'center',color:C.txtL,fontSize:12,padding:8}}>لا توجد جلسات نشطة</Text>
+            :sessions.map(s=>(
+              <View key={s.id} style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',backgroundColor:C.bg,borderRadius:10,padding:10,marginBottom:8}}>
+                <TouchableOpacity onPress={()=>revokeSession(s.id)} disabled={revoking===s.id} style={{backgroundColor:C.redL,borderRadius:8,paddingHorizontal:10,paddingVertical:5}}>
+                  <Text style={{fontSize:11,color:C.red,fontWeight:'700'}}>{revoking===s.id?'...':'قطع'}</Text>
+                </TouchableOpacity>
+                <View style={{alignItems:'flex-end',flex:1,marginRight:8}}>
+                  <Text style={{fontSize:12,color:C.navy,fontWeight:'600',textAlign:'right'}}>{shortUA(s.userAgent)}</Text>
+                  <Text style={{fontSize:10,color:C.txtL,marginTop:2}}>{s.ip} · {fmtDate(s.lastUsedAt)}</Text>
+                </View>
+              </View>
+            ))
+          )}
+          <TouchableOpacity onPress={()=>webAlert('تسجيل الخروج','سيتم تسجيل الخروج من جميع الأجهزة. هل أنت متأكد؟',[{text:'إلغاء',style:'cancel'},{text:'تسجيل الخروج من الكل',style:'destructive',onPress:logoutAll}])}
+            disabled={logoutAllLoading} style={{marginTop:8,padding:11,borderRadius:10,backgroundColor:C.redL,borderWidth:1,borderColor:'rgba(208,48,48,0.15)',alignItems:'center'}}>
+            <Text style={{fontSize:12,fontWeight:'700',color:C.red}}>{logoutAllLoading?'جارٍ الخروج...':'🔴 تسجيل الخروج من جميع الأجهزة'}</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={{height:30}}/>
       </ScrollView>
     </SafeAreaView>

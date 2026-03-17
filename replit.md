@@ -7,13 +7,14 @@ A comprehensive medical management system for Dr. Basaffar's clinic. Includes an
 ```
 BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/
 ├── backend/
-│   ├── server.js       # Express API + dashboard static server (port 3000)
-│   ├── package.json    # Dependencies: express, cors
-│   └── db.json         # Auto-generated JSON database (persistent)
+│   ├── server.js          # Express API + dashboard static server (port 3000)
+│   ├── auth.js            # Full auth system (login, register, refresh, CAPTCHA, etc.)
+│   ├── authMiddleware.js  # Shared JWT utils, cookie opts, requireAuth/requireRole, auditLog
+│   ├── package.json       # Dependencies: express, cors, bcryptjs, jsonwebtoken, etc.
+│   └── db.json            # Auto-generated JSON database (persistent)
 ├── dashboard/
 │   └── alshakreen-dashboard.html  # Admin dashboard (single-file HTML/JS/CSS)
-└── mobile-app/
-    └── alshakreen-snack.js        # Original React Native app (Expo Snack format)
+└── mobile-app/            # (see below)
 
 mobile-app/                        # Vite + React Native Web project (port 5000)
 ├── index.html                     # HTML entry point
@@ -21,80 +22,131 @@ mobile-app/                        # Vite + React Native Web project (port 5000)
 ├── vite.config.js                 # Vite config with RN-Web alias + API proxy to port 3000
 └── src/
     ├── main.jsx                   # Entry point (AppRegistry)
-    ├── App.jsx                    # Full mobile app (converted from alshakreen-snack.js)
+    ├── App.jsx                    # Full mobile app (all screens + security updates)
     └── LinearGradient.jsx         # CSS-based LinearGradient web component
 ```
 
 ## Tech Stack
 - **Backend**: Node.js + Express.js (serves API + dashboard)
 - **Database**: JSON file (`db.json`) — auto-created on first run
-- **Dashboard**: Vanilla JS/HTML/CSS (Arabic RTL UI) served by Express
+- **Dashboard**: Vanilla JS/HTML/CSS (Arabic RTL UI) served by Express; admin-only route
 - **Mobile App (Web)**: React + React Native Web + Vite (renders mobile app in browser)
 - **LinearGradient**: Custom CSS gradient component (replaces expo-linear-gradient for web)
 
 ## Running the Application
-- **"Start Backend"** workflow: `node BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js` (port 3000, console)
+- **"Start Backend"** workflow: `node BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js` (port 3000)
 - **"Start application"** workflow: Vite dev server in `mobile-app/` (port 5000, webview)
 - Vite proxies `/api/*` requests to the backend on port 3000
-- Dashboard accessible at `http://localhost:3000/`
+- Dashboard accessible at `http://localhost:3000/` (admin-only; redirects to `/admin-login`)
 
-## Key Architecture
-- Backend on port 3000 serves API + admin dashboard
-- Mobile app on port 5000 (Vite) is the user-facing webview
-- API calls from mobile app use relative `/api` paths, proxied by Vite to backend
-- All `Alert.alert()` calls replaced with `webAlert()` (uses `window.confirm`/`window.alert` on web)
-- `useNativeDriver: false` for all animations (required for web)
-- `LinearGradient` is a custom component using CSS `linear-gradient`
+## Security Architecture (Production-Grade)
+
+### Authentication Flow
+- **httpOnly cookies** — no localStorage: `access_token` (15min, path `/`) + `refresh_token` (7d, path `/api/auth`)
+- **Auto-refresh**: frontend `apiRequest()` detects 401, silently calls `POST /api/auth/refresh`, retries original request (deduped via `_refreshing` promise)
+- **Session table** in db.json: each login creates a session with hashed refresh token, IP, user-agent, expiry, revoked flag
+- Cookies are `secure: true` + `sameSite: 'strict'` in production; lax in development
+
+### CAPTCHA
+- `GET /api/auth/captcha` → server-side math challenge `{id, question}` (e.g. "كم يساوي 3 + 7؟")
+- CAPTCHA store is in-memory with 5-minute TTL and single-use (deleted on validation)
+- Required on login, register, forgot-password — **skipped in development** (`IS_PROD` guard)
+- Frontend: `CaptchaField` component with refresh button; auto-refreshes on wrong answer
+
+### Account Lockout
+- 5 failed logins → 15-minute lockout stored on user record (`failedAttempts`, `lockUntil`)
+- Remaining attempts shown per failed attempt; lock duration shown when locked
+
+### Roles & RBAC
+- Roles: `user`, `admin`, `super_admin` stored in JWT payload + user record
+- `requireAuth` — validates access token cookie
+- `requireRole(...roles)` — validates auth + role membership (returns 403 otherwise)
+- Admin dashboard (`GET /`) protected by `requireAdminDashboard` (redirects to `/admin-login`)
+- All write routes (POST/PUT/DELETE for depts/offers/etc.) require `admin` or `super_admin`
+
+### CORS
+- `credentials: true` with explicit `ALLOWED_ORIGINS` list (not wildcard)
+- Dev origins: localhost:5000, localhost:3000; Production: `APP_URL`, `ADMIN_URL` env vars
+
+### Audit Log
+- All auth events logged to `db.auditLog[]` (capped at 2000): register, login, login_failed, account_locked, logout, logout_all, email_verified, password_reset, password_changed
+- `GET /api/auth/audit-log` — admin-only, paginated
+
+### Session Management (User-Facing)
+- `GET /api/auth/sessions` — list active sessions with IP, user-agent, last used
+- `DELETE /api/auth/sessions/:id` — revoke individual session
+- `POST /api/auth/logout-all` — revoke all sessions + clear cookies
+- ProfileScreen shows session list with "قطع" (disconnect) button per session and "logout all devices" button
+
+### Environment Variables (Production Required)
+- `JWT_SECRET` — access token signing key
+- `JWT_REFRESH_SECRET` — refresh token signing key
+- `APP_URL` — canonical app URL (for email links and CORS)
+- `ADMIN_URL` — admin dashboard URL (optional, for CORS)
+- `SMTP_HOST/PORT/SECURE/USER/PASS` — email sending (falls back to Ethereal test in dev)
+
+## API Endpoints
+
+### Public
+- `GET /api/ping` — health check
+- `GET /api/auth/captcha` — math challenge for forms
+- `POST /api/auth/login` — login (sets httpOnly cookies)
+- `POST /api/auth/register` — register (sets httpOnly cookies)
+- `POST /api/auth/refresh` — silent token refresh via refresh cookie
+- `GET /api/auth/verify-email?token=...` — verify email via link
+- `POST /api/auth/forgot-password` — send password reset email
+- `GET /api/auth/reset-password-page?token=...` — password reset web page
+- `POST /api/auth/reset-password` — reset password with token
+- `POST /api/auth/resend-verification` — resend email verification link
+- `GET /api/depts` — departments (public read)
+- `GET /api/offers` — offers (public read, `?dept=` filter)
+- `GET /api/doctors` — doctors (public read)
+- `GET /api/banners` — banners (public read)
+- `GET /api/branches` — branches (public read)
+- `GET /api/settings` — app settings (public read)
+
+### Authenticated (any logged-in user)
+- `GET /api/auth/me` — current user info
+- `POST /api/auth/logout` — logout (clears cookies, revokes session)
+- `POST /api/auth/logout-all` — logout all devices
+- `GET /api/auth/sessions` — list active sessions
+- `DELETE /api/auth/sessions/:id` — revoke a session
+- `POST /api/auth/change-password` — change password
+- `GET /api/bookings` — patient bookings
+- `POST /api/bookings` — create booking
+- `GET /api/notifications` — notifications
+- `GET /api/stats` — clinic stats
+
+### Admin Only (role: admin or super_admin)
+- `POST/PUT/DELETE /api/depts` — manage departments
+- `POST/PUT/DELETE /api/offers` — manage offers
+- `POST/PUT/DELETE /api/doctors` — manage doctors
+- `POST/PUT/DELETE /api/banners` — manage banners
+- `POST/PUT/DELETE /api/branches` — manage branches
+- `PUT/DELETE /api/bookings/:id` — manage bookings
+- `GET /api/clients` — client list
+- `POST /api/notifications` — send notifications
+- `PUT /api/settings` — update settings
+- `GET /api/auth/audit-log` — security audit log
 
 ## Mobile App Screens
 - **Home** — banners, departments, offers, doctors
 - **Offers** — full offer listing
 - **Cart** — shopping cart
 - **Booking** — appointment booking form
-- **More Menu** — links to all sub-screens below:
-  - البيانات الشخصية (Profile)
-  - حجوزاتي (MyBookingsScreen) — fetches from `/api/bookings`
-  - رصيدي (BalanceScreen) — static balance/loyalty points
-  - فواتيري (InvoicesScreen) — fetches confirmed bookings from `/api/bookings`
-  - فروعنا (BranchesScreen) — shows branch details
-  - خدماتنا (ServicesScreen) — fetches departments from `/api/depts`
-  - الإشعارات (NotificationsScreen) — fetches from `/api/notifications`
-  - إرشادات الاستخدام (UsageGuideScreen) — FAQ accordion
-  - معلومات عنّا (AboutScreen) — fetches from `/api/settings`
-  - تواصل معنا (ContactScreen) — fetches from `/api/settings`
-  - سياسة الخصوصية (PrivacyScreen) — static privacy policy
-- **Login/Register** — auth screens
-- **Doctor Detail** — individual doctor info
-- **Offer Detail** — individual offer with booking
-
-## Authentication System
-- Implemented in `BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/auth.js`
-- **JWT tokens** (7-day expiry, signed with `JWT_SECRET` env var)
-- **bcrypt** password hashing (salt rounds: 12)
-- **Email verification** via nodemailer (Ethereal test mode by default; configure `SMTP_HOST/PORT/USER/PASS` env vars for real SMTP)
-- **Forgot/reset password** flow with 1-hour expiry tokens
-- **Rate limiting**: login (10/15min), register (5/hour), resend (3/hour)
-- **Security headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
-- **Authenticated `/me` endpoint** to validate tokens on app startup
-- Token stored in `localStorage` and sent as `Authorization: Bearer <token>` header
-
-## API Endpoints
-- `GET /api/ping` — health check
-- `GET/POST/PUT/DELETE /api/depts` — departments
-- `GET/POST/PUT/DELETE /api/offers` — medical offers
-- `GET/POST/PUT/DELETE /api/doctors` — doctors
-- `GET/POST/PUT/DELETE /api/banners` — banners
-- `GET/POST/PUT/DELETE /api/branches` — clinic branches
-- `GET/POST/PUT/DELETE /api/bookings` — patient bookings
-- `GET /api/clients` — registered clients
-- `GET/POST /api/notifications` — push notifications
-- `GET/PUT /api/settings` — app settings
-- `POST /api/auth/register` — register (bcrypt + JWT + email verification)
-- `POST /api/auth/login` — login (returns JWT)
-- `GET /api/auth/me` — get current user (requires JWT)
-- `GET /api/auth/verify-email?token=...` — verify email via link
-- `POST /api/auth/resend-verification` — resend verification email
-- `POST /api/auth/forgot-password` — send password reset email
-- `GET /api/auth/reset-password-page?token=...` — password reset web page
-- `POST /api/auth/reset-password` — reset password with token
-- `POST /api/auth/change-password` — change password (requires JWT)
+- **More Menu** — links to all sub-screens:
+  - البيانات الشخصية (ProfileScreen) — user info, password change, active sessions management
+  - حجوزاتي (MyBookingsScreen)
+  - رصيدي (BalanceScreen) — balance/loyalty points
+  - فواتيري (InvoicesScreen)
+  - فروعنا (BranchesScreen)
+  - خدماتنا (ServicesScreen)
+  - الإشعارات (NotificationsScreen)
+  - إرشادات الاستخدام (UsageGuideScreen)
+  - معلومات عنّا (AboutScreen)
+  - تواصل معنا (ContactScreen)
+  - سياسة الخصوصية (PrivacyScreen)
+- **LoginScreen** — with CAPTCHA math challenge
+- **RegisterScreen** — with CAPTCHA math challenge
+- **ForgotPasswordScreen** — with CAPTCHA math challenge
+- **Doctor Detail / Offer Detail** screens

@@ -378,5 +378,7 @@
       "createdAt": "2026-03-16T23:57:01.031Z",
       "bookings": 0
     }
-  ]
+  ],
+  "sessions": [],
+  "auditLog": []
 }
