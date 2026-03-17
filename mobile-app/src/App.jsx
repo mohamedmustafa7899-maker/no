@@ -296,7 +296,8 @@ function BottomNav({tab,setTab,badge}){
       {items.map(it=>{
         const active=tab===it.k;
         return(
-          <TouchableOpacity key={it.k} style={N.btn} onPress={()=>setTab(it.k)}>
+          <TouchableOpacity key={it.k} style={[N.btn,{position:'relative'}]} onPress={()=>setTab(it.k)}>
+            {active&&<View style={N.activeIndicator}/>}
             <View style={[N.iconWrap, active&&N.iconWrapA]}>
               <View style={{position:'relative'}}>
                 <SvgIcon iconKey={it.k} fill={active?C.blue:C.txtL} size={21}/>
@@ -311,9 +312,10 @@ function BottomNav({tab,setTab,badge}){
   );
 }
 const N=StyleSheet.create({
-  bar:{flexDirection:'row',backgroundColor:C.white,borderTopWidth:1,borderTopColor:'#E3EEFF',height:68,paddingBottom:8,paddingTop:4,shadowColor:'#1A3A6B',shadowOffset:{width:0,height:-2},shadowOpacity:0.06,shadowRadius:8,elevation:10},
-  btn:{flex:1,alignItems:'center',justifyContent:'center',gap:3},
-  iconWrap:{width:44,height:34,borderRadius:17,alignItems:'center',justifyContent:'center'},
+  bar:{flexDirection:'row',backgroundColor:C.white,borderTopWidth:1,borderTopColor:'#E3EEFF',height:68,paddingBottom:6,paddingTop:0,shadowColor:'#1A3A6B',shadowOffset:{width:0,height:-2},shadowOpacity:0.06,shadowRadius:8,elevation:10},
+  btn:{flex:1,alignItems:'center',justifyContent:'center',gap:2,paddingTop:0},
+  activeIndicator:{position:'absolute',top:0,left:'25%',right:'25%',height:3,backgroundColor:C.blue,borderBottomLeftRadius:3,borderBottomRightRadius:3},
+  iconWrap:{width:44,height:32,borderRadius:16,alignItems:'center',justifyContent:'center'},
   iconWrapA:{backgroundColor:'rgba(36,99,235,0.1)'},
   lbl:{fontSize:9.5,fontWeight:'600',color:C.txtL},
   lblA:{color:C.blue,fontWeight:'700'},
@@ -506,10 +508,10 @@ function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,use
                 {d.image&&<Image source={{uri:d.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
                 <LinearGradient colors={['transparent','rgba(10,22,40,0.6)']} style={{position:'absolute',bottom:0,left:0,right:0,height:40}}/>
               </View>
-              <View style={{paddingHorizontal:9,paddingTop:10}}>
+              <View style={{paddingHorizontal:9,paddingTop:10,paddingBottom:2}}>
                 <Text style={{fontSize:11.5,fontWeight:'800',color:C.navy,marginBottom:2}}>{d.name}</Text>
                 <Text style={{fontSize:9.5,color:C.blue,marginBottom:7,fontWeight:'600'}}>{d.spec}</Text>
-                <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
                   <View style={{flexDirection:'row',alignItems:'center',gap:2}}>
                     <Text style={{fontSize:10,color:C.amber}}>★</Text>
                     <Text style={{fontSize:10,fontWeight:'700',color:C.navy}}>{d.rating}</Text>
@@ -518,6 +520,10 @@ function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,use
                     <Text style={{fontSize:9,color:C.txtM,fontWeight:'600'}}>{d.exp}س خبرة</Text>
                   </View>
                 </View>
+                <TouchableOpacity onPress={()=>onDoctor(d)}
+                  style={{backgroundColor:C.blue,borderRadius:10,paddingVertical:7,alignItems:'center'}}>
+                  <Text style={{fontSize:10,fontWeight:'700',color:'white'}}>احجز موعد</Text>
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           ))}
@@ -879,19 +885,33 @@ function MoreScreen({loggedIn,userName,userEmail,emailVerified,onLogin,onBranche
     setResendSent(true);
   };
   const rows=[
-    {i:'👤',l:'البيانات الشخصية',s:'تعديل معلوماتك',p:onProfile},
-    {i:'📋',l:'حجوزاتي',s:'عرض المواعيد',p:onBookings},
-    {i:'💰',l:'رصيدي',s:'0 ريال',p:onBalance},
-    {i:'🧾',l:'فواتيري',p:onInvoices},
-    {i:'📍',l:'فروعنا',s:'3 فروع',p:onBranches},
-    {i:'⚕️',l:'خدماتنا',p:onServices},
-    {i:'🔔',l:'الإشعارات',p:onNotifications},
-    {i:'📖',l:'إرشادات الاستخدام',p:onGuide},
-    {i:'ℹ️',l:'معلومات عنّا',p:onAbout},
-    {i:'💬',l:'تواصل معنا',p:onContact},
-    {i:'🔒',l:'سياسة الخصوصية',p:onPrivacy},
+    {svg:'user',    l:'البيانات الشخصية',s:'تعديل معلوماتك',p:onProfile},
+    {svg:'calendar',l:'حجوزاتي',s:'عرض المواعيد',p:onBookings},
+    {svg:'wallet',  l:'رصيدي',s:'0 ريال',p:onBalance},
+    {svg:'receipt', l:'فواتيري',p:onInvoices},
+    {svg:'mappin',  l:'فروعنا',s:'3 فروع',p:onBranches},
+    {svg:'heart',   l:'خدماتنا',p:onServices},
+    {svg:'bell',    l:'الإشعارات',p:onNotifications},
+    {svg:'book',    l:'إرشادات الاستخدام',p:onGuide},
+    {svg:'info',    l:'معلومات عنّا',p:onAbout},
+    {svg:'chat',    l:'تواصل معنا',p:onContact},
+    {svg:'lock',    l:'سياسة الخصوصية',p:onPrivacy},
   ];
   const ROW_COLORS = ['#3B82F6','#10B981','#F59E0B','#6366F1','#EF4444','#8B5CF6','#F97316','#06B6D4','#EC4899','#0EA5E9','#84CC16'];
+  const MORE_SVG = {
+    user:     'M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z',
+    calendar: 'M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z',
+    wallet:   'M21 7H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 12H3V9h18v10zm-9-1c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zM1 5h20v2H1z',
+    receipt:  'M18 0H6L4 2v18l2 2 2-2 2 2 2-2 2 2 2-2 2 2 2-2V2L18 0zM16 14H8v-2h8v2zm0-4H8V8h8v2z',
+    mappin:   'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+    heart:    'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z',
+    bell:     'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z',
+    book:     'M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z',
+    info:     'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',
+    chat:     'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z',
+    lock:     'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z',
+    globe:    'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+  };
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
       {/* ── Profile Header ── */}
@@ -933,7 +953,10 @@ function MoreScreen({loggedIn,userName,userEmail,emailVerified,onLogin,onBranche
         )}
         {/* Settings rows */}
         <View style={{backgroundColor:C.white,marginTop:10,borderTopWidth:1,borderTopColor:C.divider}}>
-          {rows.map((r,i)=>(
+          {rows.map((r,i)=>{
+            const ic=ROW_COLORS[i]||C.blue;
+            const svgPath=MORE_SVG[r.svg]||MORE_SVG.info;
+            return(
             <TouchableOpacity key={i} onPress={r.p} activeOpacity={r.p?0.7:1}
               style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:13,borderBottomWidth:1,borderBottomColor:C.divider}}>
               <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
@@ -945,12 +968,15 @@ function MoreScreen({loggedIn,userName,userEmail,emailVerified,onLogin,onBranche
                   <Text style={{fontSize:13,fontWeight:'600',color:C.navy,textAlign:'right'}}>{r.l}</Text>
                   {r.s&&<Text style={{fontSize:10,color:C.txtL,marginTop:1,textAlign:'right'}}>{r.s}</Text>}
                 </View>
-                <View style={{width:40,height:40,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:(ROW_COLORS[i]||C.blue)+'18'}}>
-                  <Text style={{fontSize:18}}>{r.i}</Text>
+                <View style={{width:42,height:42,borderRadius:13,alignItems:'center',justifyContent:'center',backgroundColor:ic+'1A'}}>
+                  {React.createElement('svg',{xmlns:'http://www.w3.org/2000/svg',viewBox:'0 0 24 24',width:20,height:20,fill:ic},
+                    React.createElement('path',{d:svgPath})
+                  )}
                 </View>
               </View>
             </TouchableOpacity>
-          ))}
+            );
+          })}
           {/* Language row */}
           <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:13,borderBottomWidth:1,borderBottomColor:C.divider}}>
             <View style={{flexDirection:'row',backgroundColor:C.bgD,borderRadius:10,padding:2,gap:2}}>
@@ -962,8 +988,10 @@ function MoreScreen({loggedIn,userName,userEmail,emailVerified,onLogin,onBranche
             </View>
             <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
               <Text style={{fontSize:13,fontWeight:'600',color:C.navy}}>اللغة</Text>
-              <View style={{width:40,height:40,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:'#06B6D4'+'18'}}>
-                <Text style={{fontSize:18}}>🌐</Text>
+              <View style={{width:42,height:42,borderRadius:13,alignItems:'center',justifyContent:'center',backgroundColor:'#06B6D41A'}}>
+                {React.createElement('svg',{xmlns:'http://www.w3.org/2000/svg',viewBox:'0 0 24 24',width:20,height:20,fill:'#06B6D4'},
+                  React.createElement('path',{d:MORE_SVG.globe})
+                )}
               </View>
             </View>
           </View>
@@ -999,7 +1027,7 @@ function AllDoctorsScreen({onBack,onDoctor,doctors:propDoctors}){
             <View style={{flex:1,padding:13}}>
               <Text style={{fontSize:14,fontWeight:'800',color:C.navy,marginBottom:3,textAlign:'right'}}>{d.name}</Text>
               <Text style={{fontSize:11,color:C.blue,marginBottom:7,textAlign:'right',fontWeight:'600'}}>{d.spec}</Text>
-              <View style={{flexDirection:'row',gap:8,justifyContent:'flex-end',alignItems:'center'}}>
+              <View style={{flexDirection:'row',gap:8,justifyContent:'flex-end',alignItems:'center',marginBottom:10}}>
                 <View style={{backgroundColor:C.bgD,borderRadius:7,paddingHorizontal:8,paddingVertical:3}}>
                   <Text style={{fontSize:10,color:C.txtM,fontWeight:'600'}}>{d.exp} سنة خبرة</Text>
                 </View>
@@ -1008,6 +1036,10 @@ function AllDoctorsScreen({onBack,onDoctor,doctors:propDoctors}){
                   <Text style={{fontSize:10,fontWeight:'700',color:'#92400E'}}>{d.rating}</Text>
                 </View>
               </View>
+              <TouchableOpacity onPress={()=>onDoctor(d)}
+                style={{backgroundColor:C.blue,borderRadius:10,paddingVertical:7,alignItems:'center'}}>
+                <Text style={{fontSize:11,fontWeight:'700',color:'white'}}>احجز موعد</Text>
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
         ))}
