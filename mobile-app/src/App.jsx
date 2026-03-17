@@ -198,6 +198,7 @@ export default function App() {
   if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} onLogin={(user)=>{handleLogin(user);go('tabs');}} onRegister={()=>go('register')} onForgot={()=>go('forgotPassword')} />;
   if (screen==='register') return <RegisterScreen onBack={()=>go('login')} onDone={(user)=>{handleLogin(user);go('tabs');}} />;
   if (screen==='forgotPassword') return <ForgotPasswordScreen onBack={()=>go('login')} />;
+  if (screen==='allDoctors') return <AllDoctorsScreen onBack={()=>go('tabs')} onDoctor={d=>go('doctorDetail',d)} doctors={apiDoctors} />;
   if (screen==='branches') return <BranchesScreen onBack={()=>go('tabs')} branches={apiBranches} />;
   if (screen==='profile') return <ProfileScreen onBack={()=>go('tabs')} userName={userName} userEmail={userEmail} emailVerified={emailVerified} onVerifiedUpdate={()=>setEmailVerified(true)} />;
   if (screen==='myBookings') return <MyBookingsScreen onBack={()=>go('tabs')} loggedIn={loggedIn} onLogin={()=>go('login')} />;
@@ -213,7 +214,7 @@ export default function App() {
   return (
     <View style={{flex:1,backgroundColor:C.bg}}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg}/>
-      {tab==='home'    && <HomeScreen    onOffer={o=>go('offerDetail',o)} onDoctor={d=>go('doctorDetail',d)} onBranches={()=>go('branches')} loggedIn={loggedIn} userName={userName} onLogin={()=>go('login')} depts={apiDepts} offers={apiOffers} doctors={apiDoctors} banners={apiBanners} />}
+      {tab==='home'    && <HomeScreen    onOffer={o=>go('offerDetail',o)} onDoctor={d=>go('doctorDetail',d)} onBranches={()=>go('branches')} onOffers={()=>setTab('offers')} onDoctors={()=>go('allDoctors')} loggedIn={loggedIn} userName={userName} onLogin={()=>go('login')} depts={apiDepts} offers={apiOffers} doctors={apiDoctors} banners={apiBanners} />}
       {tab==='offers'  && <OffersScreen  onOffer={o=>go('offerDetail',o)} offers={apiOffers} />}
       {tab==='cart'    && <CartScreen    cart={cart} remove={removeFromCart} loggedIn={loggedIn} onLogin={()=>go('login')} clear={clearCart} />}
       {tab==='booking' && <BookingScreen loggedIn={loggedIn} onLogin={()=>go('login')} branches={apiBranches} />}
@@ -294,7 +295,7 @@ function Splash({onDone}){
   );
 }
 
-function HomeScreen({onOffer,onDoctor,onBranches,loggedIn,userName,onLogin,depts:propDepts,offers:propOffers,doctors:propDoctors,banners:propBanners}){
+function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,userName,onLogin,depts:propDepts,offers:propOffers,doctors:propDoctors,banners:propBanners}){
   const localDepts   = propDepts   || DEPTS;
   const localOffers  = propOffers  || OFFERS;
   const localDoctors = propDoctors || DOCTORS;
@@ -372,7 +373,7 @@ function HomeScreen({onOffer,onDoctor,onBranches,loggedIn,userName,onLogin,depts
           ))}
         </ScrollView>
 
-        <SH title="أفضل العروض" more="تصفح الكل"/>
+        <SH title="أفضل العروض" more="تصفح الكل" onMore={onOffers}/>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:14,gap:12}}>
           {localOffers.slice(0,5).map(o=>(
             <TouchableOpacity key={o.id} style={{width:158,borderRadius:16,overflow:'hidden',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD}} onPress={()=>onOffer(o)} activeOpacity={0.87}>
@@ -395,7 +396,7 @@ function HomeScreen({onOffer,onDoctor,onBranches,loggedIn,userName,onLogin,depts
           ))}
         </ScrollView>
 
-        <SH title="نخبة أطبائنا" more="عرض الكل"/>
+        <SH title="نخبة أطبائنا" more="عرض الكل" onMore={onDoctors}/>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:16,gap:12}}>
           {localDoctors.map(d=>(
             <TouchableOpacity key={d.id} style={{width:128,borderRadius:16,overflow:'hidden',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD}} onPress={()=>onDoctor(d)} activeOpacity={0.87}>
@@ -415,11 +416,15 @@ function HomeScreen({onOffer,onDoctor,onBranches,loggedIn,userName,onLogin,depts
     </SafeAreaView>
   );
 }
-function SH({title,more}){
+function SH({title,more,onMore}){
   return(
     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingBottom:10,paddingTop:4}}>
       <Text style={{fontSize:14,fontWeight:'700',color:C.navy}}>{title}</Text>
-      {more&&<Text style={{fontSize:11,fontWeight:'600',color:C.blue}}>{more}</Text>}
+      {more&&(
+        <TouchableOpacity onPress={onMore} activeOpacity={0.7} hitSlop={{top:8,bottom:8,left:8,right:8}}>
+          <Text style={{fontSize:11,fontWeight:'600',color:C.blue}}>{more} ›</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -766,6 +771,39 @@ function MoreScreen({loggedIn,userName,userEmail,emailVerified,onLogin,onBranche
             <Text style={{fontSize:13,fontWeight:'700',color:C.red}}>تسجيل الخروج 👋</Text>
           </TouchableOpacity>
         )}
+        <View style={{height:20}}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function AllDoctorsScreen({onBack,onDoctor,doctors:propDoctors}){
+  const list=propDoctors||DOCTORS;
+  return(
+    <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
+      <BB title="نخبة أطبائنا 👨‍⚕️" onBack={onBack}/>
+      <ScrollView contentContainerStyle={{padding:16}}>
+        {list.map(d=>(
+          <TouchableOpacity key={d.id} onPress={()=>onDoctor(d)} activeOpacity={0.87}
+            style={{flexDirection:'row',alignItems:'center',backgroundColor:C.white,borderRadius:16,marginBottom:12,overflow:'hidden',borderWidth:1,borderColor:C.bgD}}>
+            <LinearGradient colors={d.color} style={{width:90,height:90,alignItems:'center',justifyContent:'center'}}>
+              <Text style={{fontSize:44}}>{d.emoji}</Text>
+            </LinearGradient>
+            <View style={{flex:1,padding:12}}>
+              <Text style={{fontSize:14,fontWeight:'700',color:C.navy,marginBottom:3,textAlign:'right'}}>{d.name}</Text>
+              <Text style={{fontSize:11,color:C.blue,marginBottom:5,textAlign:'right'}}>{d.spec}</Text>
+              <View style={{flexDirection:'row',gap:10,justifyContent:'flex-end'}}>
+                <View style={{flexDirection:'row',alignItems:'center',gap:3}}>
+                  <Text style={{fontSize:10,color:C.txtL}}>{d.exp} سنة</Text>
+                  <Text style={{fontSize:9,color:C.txtL}}>خبرة</Text>
+                </View>
+                <View style={{flexDirection:'row',alignItems:'center',gap:3}}>
+                  <Text style={{fontSize:10,fontWeight:'700',color:C.navy}}>{d.rating} ⭐</Text>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
         <View style={{height:20}}/>
       </ScrollView>
     </SafeAreaView>
