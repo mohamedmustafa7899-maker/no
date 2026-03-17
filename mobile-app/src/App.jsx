@@ -80,10 +80,19 @@ const BW = Math.min(width - 32, 500);
 const C = {
   blue:'#2463EB', blueL:'#DBEAFE', blueD:'#1A4AC4',
   navy:'#0A1628', navyM:'#0F2347', navyS:'#1A3A6B',
-  bg:'#F0F6FF', bgD:'#DBEAFE',
-  white:'#FFFFFF', txt:'#0A1628', txtM:'#1E3A6B', txtL:'#6B86AA',
+  bg:'#F4F8FF', bgD:'#E3EEFF',
+  white:'#FFFFFF', txt:'#0A1628', txtM:'#1E3A6B', txtL:'#7A90B0',
   grn:'#2A8A45', grnL:'#EAF7EE', red:'#D03030', redL:'#FDEAEA',
+  card:'#FFFFFF', divider:'#EEF3FF',
+  amber:'#F59E0B', amberL:'#FEF3C7',
+  teal:'#0891B2', tealL:'#E0F2FE',
 };
+const shadow = Platform.OS==='web'
+  ? {boxShadow:'0 2px 12px rgba(36,99,235,0.09)'}
+  : {shadowColor:'#2463EB',shadowOffset:{width:0,height:2},shadowOpacity:0.08,shadowRadius:8,elevation:3};
+const cardStyle = Platform.OS==='web'
+  ? {backgroundColor:'#FFFFFF',borderRadius:16,borderWidth:1,borderColor:'#EEF3FF',boxShadow:'0 2px 10px rgba(26,58,107,0.08)'}
+  : {backgroundColor:'#FFFFFF',borderRadius:16,borderWidth:1,borderColor:'#EEF3FF',shadowColor:'#1A3A6B',shadowOffset:{width:0,height:2},shadowOpacity:0.07,shadowRadius:10,elevation:3};
 
 const DEPTS = [
   { id:1, label:'الأسنان',         dept:'أسنان',    color:['#0A1628','#1A3A6B'], image:'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=300&q=80', active:true },
@@ -257,27 +266,58 @@ export default function App() {
   );
 }
 
+const NAV_ICONS = {
+  home:    'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
+  offers:  'M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z',
+  cart:    'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 5.9 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z',
+  booking: 'M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z',
+  more:    'M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z',
+};
+
+function SvgIcon({iconKey, fill='#333', size=22}){
+  const d = NAV_ICONS[iconKey] || NAV_ICONS.more;
+  return React.createElement('svg', {
+    width:size, height:size, viewBox:'0 0 24 24', fill,
+    xmlns:'http://www.w3.org/2000/svg',
+    style:{display:'block',flexShrink:0}
+  }, React.createElement('path', {d}));
+}
+
 function BottomNav({tab,setTab,badge}){
-  const items=[{k:'home',i:'🏠',l:'الرئيسية'},{k:'offers',i:'🎁',l:'العروض'},{k:'cart',i:'🛒',l:'مشترياتي',b:badge},{k:'booking',i:'📅',l:'حجز موعد'},{k:'more',i:'☰',l:'المزيد'}];
+  const items=[
+    {k:'home',   l:'الرئيسية'},
+    {k:'offers', l:'العروض'},
+    {k:'cart',   l:'مشترياتي', b:badge},
+    {k:'booking',l:'حجز موعد'},
+    {k:'more',   l:'المزيد'},
+  ];
   return (
     <View style={N.bar}>
-      {items.map(it=>(
-        <TouchableOpacity key={it.k} style={N.btn} onPress={()=>setTab(it.k)}>
-          <View>
-            <Text style={{fontSize:22,opacity:tab===it.k?1:.45}}>{it.i}</Text>
-            {it.b>0&&<View style={N.badge}><Text style={N.badgeTxt}>{it.b}</Text></View>}
-          </View>
-          <Text style={[N.lbl,tab===it.k&&{color:C.blue}]}>{it.l}</Text>
-        </TouchableOpacity>
-      ))}
+      {items.map(it=>{
+        const active=tab===it.k;
+        return(
+          <TouchableOpacity key={it.k} style={N.btn} onPress={()=>setTab(it.k)}>
+            <View style={[N.iconWrap, active&&N.iconWrapA]}>
+              <View style={{position:'relative'}}>
+                <SvgIcon iconKey={it.k} fill={active?C.blue:C.txtL} size={21}/>
+                {it.b>0&&<View style={N.badge}><Text style={N.badgeTxt}>{it.b}</Text></View>}
+              </View>
+            </View>
+            <Text style={[N.lbl, active&&N.lblA]}>{it.l}</Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
 const N=StyleSheet.create({
-  bar:{flexDirection:'row',backgroundColor:C.white,borderTopWidth:1,borderTopColor:C.bgD,height:62,paddingBottom:6},
+  bar:{flexDirection:'row',backgroundColor:C.white,borderTopWidth:1,borderTopColor:'#E3EEFF',height:68,paddingBottom:8,paddingTop:4,shadowColor:'#1A3A6B',shadowOffset:{width:0,height:-2},shadowOpacity:0.06,shadowRadius:8,elevation:10},
   btn:{flex:1,alignItems:'center',justifyContent:'center',gap:3},
-  lbl:{fontSize:9,fontWeight:'600',color:C.txtL},
-  badge:{position:'absolute',top:-4,right:-9,backgroundColor:C.red,borderRadius:8,minWidth:17,height:17,alignItems:'center',justifyContent:'center',paddingHorizontal:3},
+  iconWrap:{width:44,height:34,borderRadius:17,alignItems:'center',justifyContent:'center'},
+  iconWrapA:{backgroundColor:'rgba(36,99,235,0.1)'},
+  lbl:{fontSize:9.5,fontWeight:'600',color:C.txtL},
+  lblA:{color:C.blue,fontWeight:'700'},
+  badge:{position:'absolute',top:-5,right:-10,backgroundColor:C.red,borderRadius:8,minWidth:17,height:17,alignItems:'center',justifyContent:'center',paddingHorizontal:3},
   badgeTxt:{fontSize:9,fontWeight:'700',color:'white'},
 });
 
@@ -341,107 +381,143 @@ function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,use
     },3200);
     return ()=>clearInterval(t);
   },[localBanners.length]);
+  const discountPct = (o) => o.orig>o.price ? Math.round((1-o.price/o.orig)*100) : 0;
   return (
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
-      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:10,backgroundColor:C.bg,borderBottomWidth:1,borderBottomColor:C.bgD}}>
-        <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-          <LinearGradient colors={['#0A1628','#0F2347']} style={{width:36,height:36,borderRadius:10,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:'rgba(36,99,235,0.35)'}}>
-            <View style={{width:22,height:2.5,backgroundColor:C.blue,borderRadius:1,marginBottom:3}}/>
-            <Text style={{fontSize:6.5,fontWeight:'900',color:'white',letterSpacing:0.8}}>BASAFFAR</Text>
+      {/* ── Header ── */}
+      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:11,backgroundColor:C.white,borderBottomWidth:1,borderBottomColor:C.divider}}>
+        <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+          <LinearGradient colors={['#0A1628','#1A4AC4']} style={{width:40,height:40,borderRadius:12,alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:'rgba(36,99,235,0.3)'}}>
+            <View style={{width:24,height:3,backgroundColor:'#60A5FA',borderRadius:2,marginBottom:3}}/>
+            <Text style={{fontSize:7,fontWeight:'900',color:'white',letterSpacing:1}}>BASAFFAR</Text>
           </LinearGradient>
           <View>
-            <Text style={{fontSize:13,fontWeight:'700',color:C.navyM}}>باصفار</Text>
-            <Text style={{fontSize:7,color:C.txtL,letterSpacing:0.5}}>DR BASAFFAR CLINIC</Text>
+            <Text style={{fontSize:15,fontWeight:'800',color:C.navy}}>مركز باصفار</Text>
+            <Text style={{fontSize:9,color:C.txtL,letterSpacing:0.4}}>DR BASAFFAR CLINIC</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={onLogin} style={{flexDirection:'row',alignItems:'center',gap:7,backgroundColor:C.bgD,paddingHorizontal:10,paddingVertical:5,borderRadius:20}}>
-          <LinearGradient colors={[C.blue,C.blueD]} style={{width:26,height:26,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
-            <Text style={{color:'white',fontWeight:'700',fontSize:11}}>{loggedIn?(userName[0]||'ب'):'ب'}</Text>
+        <TouchableOpacity onPress={onLogin} activeOpacity={0.8}
+          style={{flexDirection:'row',alignItems:'center',gap:7,backgroundColor:C.bg,paddingHorizontal:10,paddingVertical:6,borderRadius:22,borderWidth:1,borderColor:C.divider}}>
+          <LinearGradient colors={[C.blue,C.blueD]} style={{width:30,height:30,borderRadius:15,alignItems:'center',justifyContent:'center'}}>
+            <Text style={{color:'white',fontWeight:'800',fontSize:12}}>{loggedIn?(userName[0]||'ب'):'ب'}</Text>
           </LinearGradient>
-          <Text style={{fontSize:11,fontWeight:'600',color:C.navyM}}>{loggedIn?`أهلاً، ${userName}`:'تسجيل الدخول'}</Text>
+          <Text style={{fontSize:11,fontWeight:'600',color:C.navyM}}>{loggedIn?`أهلاً، ${userName.split(' ')[0]}`:'تسجيل الدخول'}</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{padding:12}}>
-          <View style={{flexDirection:'row',alignItems:'center',gap:8,backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:24,paddingHorizontal:14,paddingVertical:10}}>
-            <Text style={{fontSize:14,opacity:.4}}>🔍</Text>
+      <ScrollView showsVerticalScrollIndicator={false} style={{backgroundColor:C.bg}}>
+        {/* ── Search ── */}
+        <View style={{paddingHorizontal:16,paddingTop:14,paddingBottom:8}}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:10,backgroundColor:C.white,borderRadius:14,paddingHorizontal:14,paddingVertical:11,borderWidth:1,borderColor:C.divider,...shadow}}>
+            <Text style={{fontSize:15,opacity:.5}}>🔍</Text>
             <TextInput placeholder="ابحث عن عروض، أطباء، خدمات..." placeholderTextColor={C.txtL} style={{flex:1,fontSize:12,color:C.txt}} textAlign="right"/>
           </View>
         </View>
 
-        <View style={{marginHorizontal:16,marginBottom:14,borderRadius:20,overflow:'hidden'}}>
+        {/* ── Banner ── */}
+        <View style={{marginHorizontal:16,marginBottom:16,borderRadius:22,overflow:'hidden',...shadow}}>
           <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={e=>setBi(Math.round(e.nativeEvent.contentOffset.x/BW))}>
             {localBanners.map(b=>(
               b.image
-                ? <Image key={b.id} source={{uri:b.image}} style={{width:BW,height:158}} resizeMode="cover"/>
-                : <LinearGradient key={b.id} colors={b.color||['#0A1628','#1A3A6B']} style={{width:BW,height:158,alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-                    <View style={{position:'absolute',width:130,height:130,borderRadius:65,borderWidth:1,borderColor:'rgba(36,99,235,0.12)',top:-35,left:-35}}/>
-                    <View style={{backgroundColor:'rgba(36,99,235,0.2)',borderWidth:1,borderColor:'rgba(36,99,235,0.4)',borderRadius:10,paddingHorizontal:10,paddingVertical:3,marginBottom:8}}>
-                      <Text style={{fontSize:9,color:C.blue}}>{b.tag}</Text>
+                ? <View key={b.id} style={{width:BW,height:170,position:'relative'}}>
+                    <Image source={{uri:b.image}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
+                    <LinearGradient colors={['transparent','rgba(10,22,40,0.7)']} style={{position:'absolute',bottom:0,left:0,right:0,height:80}}/>
+                    <Text style={{position:'absolute',bottom:16,right:16,color:'white',fontWeight:'800',fontSize:14}}>{b.title}</Text>
+                  </View>
+                : <LinearGradient key={b.id} colors={b.color||['#0A1628','#1A3A6B']} style={{width:BW,height:170,alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+                    <View style={{position:'absolute',width:200,height:200,borderRadius:100,borderWidth:1,borderColor:'rgba(96,165,250,0.1)',top:-60,right:-60}}/>
+                    <View style={{backgroundColor:'rgba(36,99,235,0.18)',borderWidth:1,borderColor:'rgba(96,165,250,0.3)',borderRadius:12,paddingHorizontal:12,paddingVertical:4,marginBottom:10}}>
+                      <Text style={{fontSize:10,color:'#93C5FD',fontWeight:'700'}}>{b.tag}</Text>
                     </View>
-                    <Text style={{fontSize:22,fontWeight:'900',color:'white',marginBottom:4}}>{b.title}</Text>
-                    <Text style={{fontSize:10,color:'rgba(255,255,255,0.6)'}}>{b.subtitle}</Text>
+                    <Text style={{fontSize:24,fontWeight:'900',color:'white',marginBottom:5}}>{b.title}</Text>
+                    <Text style={{fontSize:11,color:'rgba(255,255,255,0.65)'}}>{b.subtitle}</Text>
                   </LinearGradient>
             ))}
           </ScrollView>
-          <LinearGradient colors={[C.navy,C.navyM]} style={{flexDirection:'row',justifyContent:'center',gap:5,paddingVertical:8}}>
+          <View style={{flexDirection:'row',justifyContent:'center',gap:5,paddingVertical:9,backgroundColor:'rgba(10,22,40,0.85)'}}>
             {localBanners.map((_,i)=>(
-              <TouchableOpacity key={i} onPress={()=>{ref.current?.scrollTo({x:i*BW,animated:true});setBi(i);}}
-                style={{width:bi===i?14:6,height:6,borderRadius:3,backgroundColor:bi===i?C.blue:'rgba(255,255,255,0.3)'}}/>
+              <TouchableOpacity key={i} onPress={()=>{ref.current?.scrollTo({x:i*BW,animated:true});setBi(i);}}>
+                <View style={{width:bi===i?22:6,height:6,borderRadius:3,backgroundColor:bi===i?C.blue:'rgba(255,255,255,0.25)'}}/>
+              </TouchableOpacity>
             ))}
-          </LinearGradient>
+          </View>
         </View>
 
+        {/* ── Departments ── */}
         <SH title="أقسام العيادة"/>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:14,gap:12}}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:16,gap:11}}>
           {localDepts.filter(d=>d.active!==false).map(d=>(
-            <TouchableOpacity key={d.id} style={{width:140,borderRadius:18,overflow:'hidden'}}
+            <TouchableOpacity key={d.id} style={{width:130,borderRadius:18,overflow:'hidden',...shadow}}
               onPress={()=>d.dept==='branches'?onBranches():null} activeOpacity={0.88}>
-              <LinearGradient colors={d.color} style={{width:140,height:165,position:'relative',justifyContent:'flex-end'}}>
+              <LinearGradient colors={d.color} style={{width:130,height:155,position:'relative',justifyContent:'flex-end'}}>
                 <Image source={{uri:d.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>
-                <LinearGradient colors={['transparent','rgba(10,22,40,0.88)']} style={{position:'absolute',bottom:0,left:0,right:0,height:75}}/>
-                <Text style={{fontSize:13,fontWeight:'800',color:'white',textAlign:'center',paddingBottom:12,paddingHorizontal:8,zIndex:2}}>{d.label}</Text>
+                <LinearGradient colors={['transparent','rgba(8,16,35,0.92)']} style={{position:'absolute',bottom:0,left:0,right:0,height:70}}/>
+                <Text style={{fontSize:12.5,fontWeight:'800',color:'white',textAlign:'center',paddingBottom:12,paddingHorizontal:8,zIndex:2,letterSpacing:0.3}}>{d.label}</Text>
               </LinearGradient>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
+        {/* ── Offers ── */}
         <SH title="أفضل العروض" more="تصفح الكل" onMore={onOffers}/>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:14,gap:12}}>
-          {localOffers.slice(0,5).map(o=>(
-            <TouchableOpacity key={o.id} style={{width:158,borderRadius:16,overflow:'hidden',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD}} onPress={()=>onOffer(o)} activeOpacity={0.87}>
-              <LinearGradient colors={o.color||['#0A1628','#1A3A6B']} style={{height:98,alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
-                {o.image?<Image source={{uri:o.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>:<Text style={{fontSize:32}}>{o.icon}</Text>}
-                <View style={{position:'absolute',top:8,right:8,backgroundColor:'rgba(36,99,235,0.85)',borderRadius:8,paddingHorizontal:7,paddingVertical:2}}>
-                  <Text style={{fontSize:9,fontWeight:'700',color:'white'}}>{o.dept}</Text>
-                </View>
-              </LinearGradient>
-              <View style={{padding:10}}>
-                <Text style={{fontSize:11,fontWeight:'600',color:C.navy,lineHeight:16,marginBottom:6}} numberOfLines={2}>{o.name}</Text>
-                <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-                  <Text style={{fontSize:13,fontWeight:'700',color:C.blueD}}>{o.price.toLocaleString()} ﷼</Text>
-                  <View style={{width:28,height:28,borderRadius:14,backgroundColor:C.blue,alignItems:'center',justifyContent:'center'}}>
-                    <Text style={{fontSize:13}}>🛒</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:16,gap:12}}>
+          {localOffers.slice(0,5).map(o=>{
+            const disc = discountPct(o);
+            return(
+              <TouchableOpacity key={o.id} style={{width:162,...cardStyle,overflow:'hidden'}} onPress={()=>onOffer(o)} activeOpacity={0.87}>
+                <View style={{height:105,position:'relative',overflow:'hidden'}}>
+                  <LinearGradient colors={o.color||['#0A1628','#1A3A6B']} style={{position:'absolute',width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>
+                    {o.image?null:<Text style={{fontSize:34}}>{o.icon}</Text>}
+                  </LinearGradient>
+                  {o.image&&<Image source={{uri:o.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
+                  <View style={{position:'absolute',top:8,right:8,backgroundColor:C.navy+'DD',borderRadius:8,paddingHorizontal:7,paddingVertical:2}}>
+                    <Text style={{fontSize:9,fontWeight:'700',color:'#93C5FD'}}>{o.dept}</Text>
                   </View>
+                  {disc>0&&<View style={{position:'absolute',top:8,left:8,backgroundColor:C.amber,borderRadius:8,paddingHorizontal:7,paddingVertical:2}}>
+                    <Text style={{fontSize:9,fontWeight:'800',color:'white'}}>وفّر {disc}%</Text>
+                  </View>}
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+                <View style={{padding:10}}>
+                  <Text style={{fontSize:11,fontWeight:'700',color:C.navy,lineHeight:16,marginBottom:6}} numberOfLines={2}>{o.name}</Text>
+                  <View style={{flexDirection:'row',alignItems:'baseline',gap:4,marginBottom:4}}>
+                    <Text style={{fontSize:14,fontWeight:'800',color:C.blueD}}>{o.price.toLocaleString()}</Text>
+                    <Text style={{fontSize:9,color:C.txtL}}>ريال</Text>
+                    {o.orig>o.price&&<Text style={{fontSize:10,color:C.txtL,textDecorationLine:'line-through'}}>{o.orig.toLocaleString()}</Text>}
+                  </View>
+                  <TouchableOpacity onPress={()=>onOffer(o)} style={{backgroundColor:C.blueL,borderRadius:8,paddingVertical:5,alignItems:'center'}}>
+                    <Text style={{fontSize:10,fontWeight:'700',color:C.blueD}}>اشتري الآن</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
+        {/* ── Doctors ── */}
         <SH title="نخبة أطبائنا" more="عرض الكل" onMore={onDoctors}/>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:16,gap:12}}>
           {localDoctors.map(d=>(
-            <TouchableOpacity key={d.id} style={{width:128,borderRadius:16,overflow:'hidden',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD}} onPress={()=>onDoctor(d)} activeOpacity={0.87}>
-              <LinearGradient colors={d.color||['#0A1628','#1A3A6B']} style={{height:88,alignItems:'center',justifyContent:'center',position:'relative'}}>
-                {d.image?<Image source={{uri:d.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>:<Text style={{fontSize:38}}>{d.emoji||'👨‍⚕️'}</Text>}
-              </LinearGradient>
-              <View style={{padding:8}}>
-                <Text style={{fontSize:11,fontWeight:'700',color:C.navy}}>{d.name}</Text>
-                <Text style={{fontSize:9,color:C.txtL,marginBottom:2}}>{d.spec}</Text>
-                <Text style={{fontSize:9,color:C.blueD,fontWeight:'600'}}>⭐ {d.exp} سنة</Text>
+            <TouchableOpacity key={d.id} style={{width:138,...cardStyle,overflow:'hidden',paddingBottom:12}} onPress={()=>onDoctor(d)} activeOpacity={0.87}>
+              <View style={{height:96,position:'relative',overflow:'hidden'}}>
+                <LinearGradient colors={d.color||['#0A1628','#1A3A6B']} style={{position:'absolute',width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>
+                  {d.image?null:<Text style={{fontSize:42}}>{d.emoji||'👨‍⚕️'}</Text>}
+                </LinearGradient>
+                {d.image&&<Image source={{uri:d.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
+                <LinearGradient colors={['transparent','rgba(10,22,40,0.6)']} style={{position:'absolute',bottom:0,left:0,right:0,height:40}}/>
+              </View>
+              <View style={{paddingHorizontal:9,paddingTop:10}}>
+                <Text style={{fontSize:11.5,fontWeight:'800',color:C.navy,marginBottom:2}}>{d.name}</Text>
+                <Text style={{fontSize:9.5,color:C.blue,marginBottom:7,fontWeight:'600'}}>{d.spec}</Text>
+                <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                  <View style={{flexDirection:'row',alignItems:'center',gap:2}}>
+                    <Text style={{fontSize:10,color:C.amber}}>★</Text>
+                    <Text style={{fontSize:10,fontWeight:'700',color:C.navy}}>{d.rating}</Text>
+                  </View>
+                  <View style={{backgroundColor:C.bgD,borderRadius:6,paddingHorizontal:6,paddingVertical:2}}>
+                    <Text style={{fontSize:9,color:C.txtM,fontWeight:'600'}}>{d.exp}س خبرة</Text>
+                  </View>
+                </View>
               </View>
             </TouchableOpacity>
           ))}
@@ -453,11 +529,16 @@ function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,use
 }
 function SH({title,more,onMore}){
   return(
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingBottom:10,paddingTop:4}}>
-      <Text style={{fontSize:14,fontWeight:'700',color:C.navy}}>{title}</Text>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingBottom:10,paddingTop:6}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
+        <View style={{width:3,height:16,backgroundColor:C.blue,borderRadius:2}}/>
+        <Text style={{fontSize:15,fontWeight:'800',color:C.navy}}>{title}</Text>
+      </View>
       {more&&(
-        <TouchableOpacity onPress={onMore} activeOpacity={0.7} hitSlop={{top:8,bottom:8,left:8,right:8}}>
-          <Text style={{fontSize:11,fontWeight:'600',color:C.blue}}>{more} ›</Text>
+        <TouchableOpacity onPress={onMore} activeOpacity={0.7} hitSlop={{top:8,bottom:8,left:8,right:8}}
+          style={{flexDirection:'row',alignItems:'center',gap:3,backgroundColor:C.blueL,paddingHorizontal:10,paddingVertical:4,borderRadius:10}}>
+          <Text style={{fontSize:11,fontWeight:'700',color:C.blueD}}>{more}</Text>
+          <Text style={{fontSize:13,color:C.blueD}}>›</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -479,31 +560,44 @@ function OffersScreen({onOffer,offers:propOffers}){
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <ScrollView contentContainerStyle={{paddingHorizontal:16}} showsVerticalScrollIndicator={false}>
-        {list.map(o=>(
-          <TouchableOpacity key={o.id} style={{marginBottom:14,borderRadius:20,overflow:'hidden',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD}} onPress={()=>onOffer(o)} activeOpacity={0.88}>
-            <LinearGradient colors={o.color||['#0A1628','#1A3A6B']} style={{height:158,alignItems:'center',justifyContent:'center',padding:20,position:'relative',overflow:'hidden'}}>
-              {o.image&&<Image source={{uri:o.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
-              <View style={{position:'absolute',width:120,height:120,borderRadius:60,borderWidth:1,borderColor:'rgba(36,99,235,0.1)',top:-30,left:-30}}/>
-              <Text style={{fontSize:20,fontWeight:'900',color:C.blue,marginBottom:5,textAlign:'center'}}>
-                {o.dept==='أسنان'?'عروض الأسنان':o.dept==='جلدية'?'عروض الجلدية':o.dept==='عيون'?'عروض العيون':'عروض التجميل'}
-              </Text>
-              <Text style={{fontSize:14,fontWeight:'600',color:'white',textAlign:'center',lineHeight:22}}>{o.name}</Text>
-            </LinearGradient>
-            <View style={{padding:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-              <View>
-                <Text style={{fontSize:10,color:C.txtL,marginBottom:2}} numberOfLines={1}>{o.name}</Text>
-                <View style={{flexDirection:'row',alignItems:'baseline',gap:6}}>
-                  <Text style={{fontSize:20,fontWeight:'700',color:C.blueD}}>{o.price.toLocaleString()} ريال</Text>
-                  {o.orig>o.price&&<Text style={{fontSize:11,color:C.txtL,textDecorationLine:'line-through'}}>{o.orig.toLocaleString()}</Text>}
+      <ScrollView contentContainerStyle={{paddingHorizontal:16,paddingTop:4}} showsVerticalScrollIndicator={false}>
+        {list.map(o=>{
+          const disc = o.orig>o.price ? Math.round((1-o.price/o.orig)*100) : 0;
+          return(
+            <TouchableOpacity key={o.id} style={{marginBottom:14,...cardStyle,overflow:'hidden'}} onPress={()=>onOffer(o)} activeOpacity={0.88}>
+              <View style={{height:148,position:'relative',overflow:'hidden'}}>
+                <LinearGradient colors={o.color||['#0A1628','#1A3A6B']} style={{position:'absolute',width:'100%',height:'100%',alignItems:'center',justifyContent:'center',padding:20}}>
+                  {!o.image&&<Text style={{fontSize:42,marginBottom:4}}>{o.icon}</Text>}
+                  <Text style={{fontSize:14,fontWeight:'700',color:'white',textAlign:'center',lineHeight:21}}>{o.name}</Text>
+                </LinearGradient>
+                {o.image&&<Image source={{uri:o.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
+                {o.image&&<LinearGradient colors={['transparent','rgba(10,22,40,0.72)']} style={{position:'absolute',bottom:0,left:0,right:0,height:70}}/>}
+                {o.image&&<Text style={{position:'absolute',bottom:14,right:16,color:'white',fontWeight:'700',fontSize:13}}>{o.name}</Text>}
+                <View style={{position:'absolute',top:10,right:10,backgroundColor:C.navy+'CC',borderRadius:8,paddingHorizontal:8,paddingVertical:3}}>
+                  <Text style={{fontSize:10,fontWeight:'700',color:'#93C5FD'}}>{o.dept}</Text>
                 </View>
+                {disc>0&&<View style={{position:'absolute',top:10,left:10,backgroundColor:C.amber,borderRadius:8,paddingHorizontal:8,paddingVertical:3}}>
+                  <Text style={{fontSize:10,fontWeight:'800',color:'white'}}>خصم {disc}%</Text>
+                </View>}
               </View>
-              <TouchableOpacity style={{backgroundColor:C.blue,borderRadius:12,paddingHorizontal:18,paddingVertical:10}} onPress={()=>onOffer(o)}>
-                <Text style={{fontSize:12,fontWeight:'700',color:'white'}}>اشتري الآن</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ))}
+              <View style={{padding:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                <View>
+                  <View style={{flexDirection:'row',alignItems:'baseline',gap:5}}>
+                    <Text style={{fontSize:22,fontWeight:'900',color:C.blueD}}>{o.price.toLocaleString()}</Text>
+                    <Text style={{fontSize:11,color:C.txtL,fontWeight:'600'}}>ريال</Text>
+                    {o.orig>o.price&&<Text style={{fontSize:12,color:C.txtL,textDecorationLine:'line-through'}}>{o.orig.toLocaleString()}</Text>}
+                  </View>
+                  {disc>0&&<View style={{backgroundColor:C.amberL,borderRadius:6,paddingHorizontal:7,paddingVertical:2,alignSelf:'flex-start',marginTop:3}}>
+                    <Text style={{fontSize:9,fontWeight:'700',color:'#92400E'}}>وفّر {(o.orig-o.price).toLocaleString()} ريال</Text>
+                  </View>}
+                </View>
+                <TouchableOpacity style={{backgroundColor:C.blue,borderRadius:12,paddingHorizontal:18,paddingVertical:10}} onPress={()=>onOffer(o)}>
+                  <Text style={{fontSize:12,fontWeight:'700',color:'white'}}>اشتري الآن</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
         <View style={{height:20}}/>
       </ScrollView>
     </SafeAreaView>
@@ -645,6 +739,8 @@ function CartScreen({cart,remove,loggedIn,onLogin,clear}){
   );
 }
 
+const TIME_SLOTS = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+
 function BookingScreen({loggedIn,onLogin,branches:propBranches,userName,userPhone,userId}){
   const BK_BR = (propBranches||BRANCHES_LIST).map(b=>b.name);
   const [nm,setNm]=useState('');
@@ -653,6 +749,7 @@ function BookingScreen({loggedIn,onLogin,branches:propBranches,userName,userPhon
   const [nt,setNt]=useState('');
   const [br,setBr]=useState(-1);
   const [of,setOf]=useState(-1);
+  const [slot,setSlot]=useState(-1);
   useEffect(()=>{
     if(loggedIn){
       if(userName) setNm(userName);
@@ -664,43 +761,95 @@ function BookingScreen({loggedIn,onLogin,branches:propBranches,userName,userPhon
     if(!ph.trim()){webAlert('تنبيه','يرجى إدخال رقم الهاتف');return;}
     if(br<0){webAlert('تنبيه','يرجى اختيار الفرع');return;}
     const brName = BK_BR[br] || BRANCH_NAMES[br] || '—';
-    const bookingData = { name:nm, phone:ph, idNum:id, note:nt, branch:brName, offer:OFFER_LIST[of]||'—', userId };
+    const slotTime = slot>=0 ? TIME_SLOTS[slot] : '—';
+    const bookingData = { name:nm, phone:ph, idNum:id, note:nt, branch:brName, offer:OFFER_LIST[of]||'—', userId, time:slotTime };
     const result = await apiPost('/bookings', bookingData);
     if(!result?.ok){webAlert('خطأ','تعذّر إرسال الحجز، يرجى المحاولة مرة أخرى.');return;}
     const code = result?.booking?.code || ('BK-'+Math.floor(Math.random()*9000+1000));
-    webAlert('تم الحجز بنجاح! 🎉',`رقم حجزك: ${code}\nالفرع: ${brName}\nسيتم التواصل معك للتأكيد.`,[
-      {text:'حسناً',onPress:()=>{setNm(userName||'');setPh(userPhone||'');setId('');setNt('');setBr(-1);setOf(-1);}},
+    webAlert('تم الحجز بنجاح! 🎉',`رقم حجزك: ${code}\nالفرع: ${brName}${slotTime!=='—'?'\nالوقت: '+slotTime:''}\nسيتم التواصل معك للتأكيد.`,[
+      {text:'حسناً',onPress:()=>{setNm(userName||'');setPh(userPhone||'');setId('');setNt('');setBr(-1);setOf(-1);setSlot(-1);}},
     ]);
   };
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
-      <PH title="حجز موعد 📅"/>
+      <View style={{backgroundColor:C.white,borderBottomWidth:1,borderBottomColor:C.divider,paddingVertical:14,alignItems:'center'}}>
+        <Text style={{fontSize:17,fontWeight:'800',color:C.navy}}>حجز موعد</Text>
+        <Text style={{fontSize:10,color:C.txtL,marginTop:2}}>احجز موعدك في دقيقتين</Text>
+      </View>
       <ScrollView contentContainerStyle={{padding:16}} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <FL>الاسم بالكامل *</FL>
-        <TextInput style={B.inp} placeholder="أدخل اسمك الكامل" value={nm} onChangeText={setNm} textAlign="right" placeholderTextColor={C.txtL}/>
-        <FL>رقم الهاتف *</FL>
-        <TextInput style={B.inp} placeholder="05xxxxxxxx" keyboardType="phone-pad" value={ph} onChangeText={setPh} textAlign="right" placeholderTextColor={C.txtL}/>
-        <FL>رقم الهوية (اختياري)</FL>
-        <TextInput style={B.inp} placeholder="١٠ أرقام" keyboardType="number-pad" value={id} onChangeText={setId} textAlign="right" placeholderTextColor={C.txtL}/>
-        <FL>اختر الفرع *</FL>
-        {BRANCH_NAMES.map((b,i)=>(
-          <TouchableOpacity key={i} onPress={()=>setBr(i)} style={[B.opt,br===i&&B.optA]}>
-            <Text>📍</Text><Text style={[B.optT,br===i&&{color:C.blueD,fontWeight:'600'}]}>{b}</Text>
-            {br===i&&<Text style={{color:C.blue}}>✓</Text>}
-          </TouchableOpacity>
-        ))}
-        <FL>اختر العرض</FL>
-        {OFFER_LIST.map((o,i)=>(
-          <TouchableOpacity key={i} onPress={()=>setOf(i)} style={[B.opt,of===i&&B.optA]}>
-            <Text>🎁</Text><Text style={[B.optT,of===i&&{color:C.blueD,fontWeight:'600'}]}>{o}</Text>
-            {of===i&&<Text style={{color:C.blue}}>✓</Text>}
-          </TouchableOpacity>
-        ))}
-        <FL>ملاحظات (اختياري)</FL>
-        <TextInput style={[B.inp,{height:76,textAlignVertical:'top'}]} placeholder="أي ملاحظات..." multiline value={nt} onChangeText={setNt} textAlign="right" placeholderTextColor={C.txtL}/>
-        <TouchableOpacity onPress={confirm} activeOpacity={0.85} style={{marginTop:20}}>
-          <LinearGradient colors={[C.navy,C.navyM]} style={{borderRadius:14,padding:15,alignItems:'center'}}>
-            <Text style={{fontSize:15,fontWeight:'700',color:C.blue}}>تأكيد حجز الموعد ✓</Text>
+
+        {/* Personal Info Card */}
+        <View style={{...cardStyle,padding:16,marginBottom:14}}>
+          <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:14,textAlign:'right'}}>البيانات الشخصية</Text>
+          <FL>الاسم بالكامل *</FL>
+          <View style={B.inputWrap}>
+            <Text style={B.inputIcon}>👤</Text>
+            <TextInput style={B.inp} placeholder="أدخل اسمك الكامل" value={nm} onChangeText={setNm} textAlign="right" placeholderTextColor={C.txtL}/>
+          </View>
+          <FL>رقم الهاتف *</FL>
+          <View style={B.inputWrap}>
+            <Text style={B.inputIcon}>📞</Text>
+            <TextInput style={B.inp} placeholder="05xxxxxxxx" keyboardType="phone-pad" value={ph} onChangeText={setPh} textAlign="right" placeholderTextColor={C.txtL}/>
+          </View>
+          <FL>رقم الهوية (اختياري)</FL>
+          <View style={B.inputWrap}>
+            <Text style={B.inputIcon}>🪪</Text>
+            <TextInput style={B.inp} placeholder="١٠ أرقام" keyboardType="number-pad" value={id} onChangeText={setId} textAlign="right" placeholderTextColor={C.txtL}/>
+          </View>
+        </View>
+
+        {/* Branch Card */}
+        <View style={{...cardStyle,padding:16,marginBottom:14}}>
+          <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:12,textAlign:'right'}}>اختر الفرع *</Text>
+          {BRANCH_NAMES.map((b,i)=>(
+            <TouchableOpacity key={i} onPress={()=>setBr(i)} style={[B.opt,br===i&&B.optA]}>
+              <Text>📍</Text><Text style={[B.optT,br===i&&{color:C.blueD,fontWeight:'700'}]}>{b}</Text>
+              <View style={{width:20,height:20,borderRadius:10,borderWidth:2,borderColor:br===i?C.blue:C.bgD,backgroundColor:br===i?C.blue:'transparent',alignItems:'center',justifyContent:'center'}}>
+                {br===i&&<Text style={{color:'white',fontSize:11,lineHeight:13}}>✓</Text>}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Time Slots Card */}
+        <View style={{...cardStyle,padding:16,marginBottom:14}}>
+          <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:4,textAlign:'right'}}>الأوقات المتاحة</Text>
+          <Text style={{fontSize:10,color:C.txtL,marginBottom:12,textAlign:'right'}}>اختر الوقت المناسب لك</Text>
+          <View style={{flexDirection:'row',flexWrap:'wrap',gap:8,justifyContent:'flex-end'}}>
+            {TIME_SLOTS.map((t,i)=>(
+              <TouchableOpacity key={i} onPress={()=>setSlot(i)}
+                style={{paddingHorizontal:14,paddingVertical:8,borderRadius:10,borderWidth:1.5,
+                  borderColor:slot===i?C.blue:C.divider,
+                  backgroundColor:slot===i?C.blueL:C.white}}>
+                <Text style={{fontSize:12,fontWeight:'700',color:slot===i?C.blueD:C.txtM}}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Service Card */}
+        <View style={{...cardStyle,padding:16,marginBottom:14}}>
+          <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:12,textAlign:'right'}}>اختر الخدمة</Text>
+          {OFFER_LIST.map((o,i)=>(
+            <TouchableOpacity key={i} onPress={()=>setOf(i)} style={[B.opt,of===i&&B.optA]}>
+              <Text>🎁</Text><Text style={[B.optT,of===i&&{color:C.blueD,fontWeight:'700'}]}>{o}</Text>
+              <View style={{width:20,height:20,borderRadius:10,borderWidth:2,borderColor:of===i?C.blue:C.bgD,backgroundColor:of===i?C.blue:'transparent',alignItems:'center',justifyContent:'center'}}>
+                {of===i&&<Text style={{color:'white',fontSize:11,lineHeight:13}}>✓</Text>}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Notes */}
+        <View style={{...cardStyle,padding:16,marginBottom:14}}>
+          <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:12,textAlign:'right'}}>ملاحظات (اختياري)</Text>
+          <TextInput style={[B.inp,{height:80,textAlignVertical:'top',flex:1}]} placeholder="أي ملاحظات أو متطلبات خاصة..." multiline value={nt} onChangeText={setNt} textAlign="right" placeholderTextColor={C.txtL}/>
+        </View>
+
+        <TouchableOpacity onPress={confirm} activeOpacity={0.85} style={{marginTop:4}}>
+          <LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:16,padding:16,alignItems:'center',flexDirection:'row',justifyContent:'center',gap:10}}>
+            <Text style={{fontSize:16,fontWeight:'800',color:'white'}}>تأكيد الحجز</Text>
+            <Text style={{fontSize:16,color:'white'}}>✓</Text>
           </LinearGradient>
         </TouchableOpacity>
         <View style={{height:30}}/>
@@ -708,11 +857,13 @@ function BookingScreen({loggedIn,onLogin,branches:propBranches,userName,userPhon
     </SafeAreaView>
   );
 }
-function FL({children}){return <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:6,marginTop:12}}>{children}</Text>;}
+function FL({children}){return <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:6,marginTop:10}}>{children}</Text>;}
 const B=StyleSheet.create({
-  inp:{backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:11,fontSize:13,color:C.txt,marginBottom:2},
-  opt:{flexDirection:'row',alignItems:'center',gap:10,padding:12,borderRadius:10,borderWidth:1,borderColor:C.bgD,backgroundColor:C.white,marginBottom:7},
-  optA:{borderColor:C.blue,backgroundColor:'rgba(36,99,235,0.05)'},
+  inputWrap:{flexDirection:'row',alignItems:'center',backgroundColor:C.bg,borderRadius:11,borderWidth:1,borderColor:C.divider,marginBottom:2,paddingHorizontal:10},
+  inputIcon:{fontSize:14,paddingRight:4,opacity:0.7},
+  inp:{flex:1,padding:11,fontSize:13,color:C.txt},
+  opt:{flexDirection:'row',alignItems:'center',gap:10,padding:12,borderRadius:11,borderWidth:1,borderColor:C.divider,backgroundColor:C.bg,marginBottom:7},
+  optA:{borderColor:C.blue,backgroundColor:C.blueL},
   optT:{flex:1,fontSize:12,color:C.txtM,textAlign:'right'},
 });
 
@@ -740,79 +891,88 @@ function MoreScreen({loggedIn,userName,userEmail,emailVerified,onLogin,onBranche
     {i:'💬',l:'تواصل معنا',p:onContact},
     {i:'🔒',l:'سياسة الخصوصية',p:onPrivacy},
   ];
+  const ROW_COLORS = ['#3B82F6','#10B981','#F59E0B','#6366F1','#EF4444','#8B5CF6','#F97316','#06B6D4','#EC4899','#0EA5E9','#84CC16'];
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
-      <LinearGradient colors={[C.navy,C.navyM]} style={{padding:20,flexDirection:'row',alignItems:'center',gap:14}}>
-        <LinearGradient colors={[C.blue,C.blueD]} style={{width:56,height:56,borderRadius:28,alignItems:'center',justifyContent:'center',borderWidth:2,borderColor:'rgba(36,99,235,0.4)'}}>
-          <Text style={{color:'white',fontSize:22,fontWeight:'700'}}>{loggedIn?(userName[0]||'ب'):'ب'}</Text>
-        </LinearGradient>
-        <View style={{flex:1}}>
-          <Text style={{fontSize:15,fontWeight:'700',color:'white',marginBottom:2}}>{loggedIn?userName:'مرحباً بك'}</Text>
-          <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
-            <Text style={{fontSize:10,color:'rgba(255,255,255,0.5)'}}>{loggedIn?'عميل مسجل':'غير مسجل'}</Text>
+      {/* ── Profile Header ── */}
+      <View style={{backgroundColor:C.white,borderBottomWidth:1,borderBottomColor:C.divider}}>
+        <View style={{padding:20,alignItems:'center'}}>
+          <LinearGradient colors={[C.blue,C.blueD]} style={{width:70,height:70,borderRadius:35,alignItems:'center',justifyContent:'center',marginBottom:12,borderWidth:3,borderColor:C.blueL}}>
+            <Text style={{color:'white',fontSize:26,fontWeight:'800'}}>{loggedIn?(userName[0]||'ب'):'ب'}</Text>
+          </LinearGradient>
+          <Text style={{fontSize:17,fontWeight:'800',color:C.navy,marginBottom:3}}>{loggedIn?userName:'مرحباً بك'}</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+            <Text style={{fontSize:11,color:C.txtL}}>{loggedIn?'عميل مسجل':'غير مسجل'}</Text>
             {loggedIn&&(emailVerified
-              ? <View style={{backgroundColor:'rgba(42,138,69,0.25)',borderRadius:6,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,color:'#7DFFA0',fontWeight:'700'}}>✓ موثّق</Text></View>
-              : <View style={{backgroundColor:'rgba(208,48,48,0.25)',borderRadius:6,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,color:'#FFB0B0',fontWeight:'700'}}>⚠ غير موثّق</Text></View>
+              ? <View style={{backgroundColor:C.grnL,borderRadius:8,paddingHorizontal:7,paddingVertical:2}}><Text style={{fontSize:9,color:C.grn,fontWeight:'700'}}>✓ موثّق</Text></View>
+              : <View style={{backgroundColor:C.redL,borderRadius:8,paddingHorizontal:7,paddingVertical:2}}><Text style={{fontSize:9,color:C.red,fontWeight:'700'}}>⚠ غير موثّق</Text></View>
             )}
           </View>
+          {!loggedIn&&(
+            <TouchableOpacity onPress={onLogin} style={{marginTop:12,backgroundColor:C.blue,borderRadius:12,paddingHorizontal:24,paddingVertical:10}}>
+              <Text style={{fontSize:13,fontWeight:'700',color:'white'}}>تسجيل الدخول</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        {!loggedIn&&(
-          <TouchableOpacity onPress={onLogin} style={{backgroundColor:C.blue,borderRadius:10,paddingHorizontal:14,paddingVertical:7}}>
-            <Text style={{fontSize:12,fontWeight:'700',color:'white'}}>تسجيل الدخول</Text>
-          </TouchableOpacity>
-        )}
-      </LinearGradient>
+      </View>
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Email verification warning */}
         {loggedIn&&!emailVerified&&(
-          <View style={{backgroundColor:'#FFF8E7',borderBottomWidth:1,borderBottomColor:'#F5D87A',padding:14}}>
+          <View style={{backgroundColor:'#FFFBEB',borderBottomWidth:1,borderBottomColor:'#FDE68A',padding:14}}>
             <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'}}>
-              <TouchableOpacity onPress={resendSent?null:resendVerification} disabled={resending}>
-                <Text style={{fontSize:11,color:C.blue,fontWeight:'700'}}>{resendSent?'تم الإرسال ✓':resending?'جارٍ الإرسال...':'إعادة الإرسال'}</Text>
+              <TouchableOpacity onPress={resendSent?null:resendVerification} disabled={resending}
+                style={{backgroundColor:'#FEF3C7',borderRadius:8,paddingHorizontal:10,paddingVertical:5,borderWidth:1,borderColor:'#FDE68A'}}>
+                <Text style={{fontSize:11,color:'#92400E',fontWeight:'700'}}>{resendSent?'تم الإرسال ✓':resending?'جارٍ...':'إعادة الإرسال'}</Text>
               </TouchableOpacity>
               <View style={{flex:1,marginRight:10}}>
-                <Text style={{fontSize:12,fontWeight:'700',color:'#7A5500',textAlign:'right'}}>⚠️ البريد الإلكتروني غير موثّق</Text>
-                <Text style={{fontSize:11,color:'#9A7520',textAlign:'right',marginTop:2}}>تحقق من بريدك لتفعيل حسابك والاستفادة من جميع المزايا.</Text>
+                <Text style={{fontSize:12,fontWeight:'700',color:'#92400E',textAlign:'right'}}>⚠️ البريد الإلكتروني غير موثّق</Text>
+                <Text style={{fontSize:11,color:'#B45309',textAlign:'right',marginTop:2}}>تحقق من بريدك لتفعيل حسابك.</Text>
               </View>
             </View>
           </View>
         )}
-        {rows.map((r,i)=>(
-          <TouchableOpacity key={i} onPress={r.p} activeOpacity={r.p?0.7:1}
-            style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:13,backgroundColor:C.white,borderBottomWidth:1,borderBottomColor:C.bg}}>
+        {/* Settings rows */}
+        <View style={{backgroundColor:C.white,marginTop:10,borderTopWidth:1,borderTopColor:C.divider}}>
+          {rows.map((r,i)=>(
+            <TouchableOpacity key={i} onPress={r.p} activeOpacity={r.p?0.7:1}
+              style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:13,borderBottomWidth:1,borderBottomColor:C.divider}}>
+              <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+                {r.b&&<View style={{backgroundColor:C.red,borderRadius:8,paddingHorizontal:6,paddingVertical:2}}><Text style={{fontSize:9,fontWeight:'700',color:'white'}}>{r.b}</Text></View>}
+                <Text style={{fontSize:14,color:C.txtL}}>›</Text>
+              </View>
+              <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
+                <View>
+                  <Text style={{fontSize:13,fontWeight:'600',color:C.navy,textAlign:'right'}}>{r.l}</Text>
+                  {r.s&&<Text style={{fontSize:10,color:C.txtL,marginTop:1,textAlign:'right'}}>{r.s}</Text>}
+                </View>
+                <View style={{width:40,height:40,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:(ROW_COLORS[i]||C.blue)+'18'}}>
+                  <Text style={{fontSize:18}}>{r.i}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+          {/* Language row */}
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:13,borderBottomWidth:1,borderBottomColor:C.divider}}>
+            <View style={{flexDirection:'row',backgroundColor:C.bgD,borderRadius:10,padding:2,gap:2}}>
+              {['ar','en'].map(x=>(
+                <TouchableOpacity key={x} onPress={()=>setLang(x)} style={{paddingHorizontal:14,paddingVertical:5,borderRadius:8,backgroundColor:lang===x?C.white:undefined}}>
+                  <Text style={{fontSize:11,fontWeight:'700',color:lang===x?C.blueD:C.txtL}}>{x==='ar'?'عربي':'EN'}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
-              <View style={{width:36,height:36,borderRadius:9,backgroundColor:'rgba(36,99,235,0.08)',alignItems:'center',justifyContent:'center'}}>
-                <Text style={{fontSize:16}}>{r.i}</Text>
-              </View>
-              <View>
-                <Text style={{fontSize:13,fontWeight:'600',color:C.navy}}>{r.l}</Text>
-                {r.s&&<Text style={{fontSize:10,color:C.txtL,marginTop:1}}>{r.s}</Text>}
+              <Text style={{fontSize:13,fontWeight:'600',color:C.navy}}>اللغة</Text>
+              <View style={{width:40,height:40,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:'#06B6D4'+'18'}}>
+                <Text style={{fontSize:18}}>🌐</Text>
               </View>
             </View>
-            <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-              {r.b&&<View style={{backgroundColor:C.red,borderRadius:8,paddingHorizontal:6,paddingVertical:2}}><Text style={{fontSize:9,fontWeight:'700',color:'white'}}>{r.b}</Text></View>}
-              <Text style={{fontSize:16,color:C.txtL}}>›</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:13,backgroundColor:C.white,borderBottomWidth:1,borderBottomColor:C.bg}}>
-          <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
-            <View style={{width:36,height:36,borderRadius:9,backgroundColor:'rgba(36,99,235,0.08)',alignItems:'center',justifyContent:'center'}}>
-              <Text style={{fontSize:16}}>🌐</Text>
-            </View>
-            <Text style={{fontSize:13,fontWeight:'600',color:C.navy}}>اللغة</Text>
-          </View>
-          <View style={{flexDirection:'row',backgroundColor:C.bgD,borderRadius:10,padding:2,gap:2}}>
-            {['ar','en'].map(x=>(
-              <TouchableOpacity key={x} onPress={()=>setLang(x)} style={{paddingHorizontal:14,paddingVertical:5,borderRadius:8,backgroundColor:lang===x?C.white:undefined}}>
-                <Text style={{fontSize:11,fontWeight:'700',color:lang===x?C.blueD:C.txtL}}>{x==='ar'?'عربي':'EN'}</Text>
-              </TouchableOpacity>
-            ))}
           </View>
         </View>
         {loggedIn&&(
           <TouchableOpacity onPress={()=>webAlert('تسجيل الخروج','هل تريد الخروج؟',[{text:'إلغاء',style:'cancel'},{text:'خروج',style:'destructive',onPress:onLogout}])}
-            style={{margin:16,padding:14,borderRadius:12,backgroundColor:C.redL,borderWidth:1,borderColor:'rgba(208,48,48,0.15)',alignItems:'center'}}>
-            <Text style={{fontSize:13,fontWeight:'700',color:C.red}}>تسجيل الخروج 👋</Text>
+            style={{margin:16,padding:15,borderRadius:14,backgroundColor:C.redL,borderWidth:1,borderColor:'#FECACA',alignItems:'center',flexDirection:'row',justifyContent:'center',gap:8}}>
+            <Text style={{fontSize:18}}>👋</Text>
+            <Text style={{fontSize:13,fontWeight:'700',color:C.red}}>تسجيل الخروج</Text>
           </TouchableOpacity>
         )}
         <View style={{height:20}}/>
@@ -825,24 +985,27 @@ function AllDoctorsScreen({onBack,onDoctor,doctors:propDoctors}){
   const list=propDoctors||DOCTORS;
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
-      <BB title="نخبة أطبائنا 👨‍⚕️" onBack={onBack}/>
+      <BB title="نخبة أطبائنا" onBack={onBack}/>
       <ScrollView contentContainerStyle={{padding:16}}>
         {list.map(d=>(
           <TouchableOpacity key={d.id} onPress={()=>onDoctor(d)} activeOpacity={0.87}
-            style={{flexDirection:'row',alignItems:'center',backgroundColor:C.white,borderRadius:16,marginBottom:12,overflow:'hidden',borderWidth:1,borderColor:C.bgD}}>
-            <LinearGradient colors={d.color} style={{width:90,height:90,alignItems:'center',justifyContent:'center'}}>
-              <Text style={{fontSize:44}}>{d.emoji}</Text>
-            </LinearGradient>
-            <View style={{flex:1,padding:12}}>
-              <Text style={{fontSize:14,fontWeight:'700',color:C.navy,marginBottom:3,textAlign:'right'}}>{d.name}</Text>
-              <Text style={{fontSize:11,color:C.blue,marginBottom:5,textAlign:'right'}}>{d.spec}</Text>
-              <View style={{flexDirection:'row',gap:10,justifyContent:'flex-end'}}>
-                <View style={{flexDirection:'row',alignItems:'center',gap:3}}>
-                  <Text style={{fontSize:10,color:C.txtL}}>{d.exp} سنة</Text>
-                  <Text style={{fontSize:9,color:C.txtL}}>خبرة</Text>
+            style={{...cardStyle,flexDirection:'row',alignItems:'center',marginBottom:12,overflow:'hidden'}}>
+            <View style={{width:90,height:90,position:'relative',overflow:'hidden'}}>
+              <LinearGradient colors={d.color||['#0A1628','#1A3A6B']} style={{position:'absolute',width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>
+                {d.image?null:<Text style={{fontSize:44}}>{d.emoji}</Text>}
+              </LinearGradient>
+              {d.image&&<Image source={{uri:d.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
+            </View>
+            <View style={{flex:1,padding:13}}>
+              <Text style={{fontSize:14,fontWeight:'800',color:C.navy,marginBottom:3,textAlign:'right'}}>{d.name}</Text>
+              <Text style={{fontSize:11,color:C.blue,marginBottom:7,textAlign:'right',fontWeight:'600'}}>{d.spec}</Text>
+              <View style={{flexDirection:'row',gap:8,justifyContent:'flex-end',alignItems:'center'}}>
+                <View style={{backgroundColor:C.bgD,borderRadius:7,paddingHorizontal:8,paddingVertical:3}}>
+                  <Text style={{fontSize:10,color:C.txtM,fontWeight:'600'}}>{d.exp} سنة خبرة</Text>
                 </View>
-                <View style={{flexDirection:'row',alignItems:'center',gap:3}}>
-                  <Text style={{fontSize:10,fontWeight:'700',color:C.navy}}>{d.rating} ⭐</Text>
+                <View style={{flexDirection:'row',alignItems:'center',gap:3,backgroundColor:C.amberL,borderRadius:7,paddingHorizontal:8,paddingVertical:3}}>
+                  <Text style={{fontSize:11,color:C.amber}}>★</Text>
+                  <Text style={{fontSize:10,fontWeight:'700',color:'#92400E'}}>{d.rating}</Text>
                 </View>
               </View>
             </View>
@@ -855,43 +1018,87 @@ function AllDoctorsScreen({onBack,onDoctor,doctors:propDoctors}){
 }
 
 function DoctorDetail({doctor:d,onBack,onBook}){
+  const AVAIL_SLOTS = ['09:00','10:00','11:00','13:00','14:00','15:00','17:00','18:00'];
+  const [selSlot, setSelSlot] = useState(-1);
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
-      <BB title="الطبيب" onBack={onBack}/>
+      <BB title="تفاصيل الطبيب" onBack={onBack}/>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={d.color} style={{height:205,alignItems:'center',justifyContent:'center',gap:10}}>
-          <View style={{width:84,height:84,borderRadius:42,backgroundColor:'rgba(255,255,255,0.12)',borderWidth:3,borderColor:C.blue,alignItems:'center',justifyContent:'center'}}>
-            <Text style={{fontSize:44}}>{d.emoji}</Text>
+        {/* Doctor hero */}
+        <View style={{backgroundColor:C.white,padding:20,alignItems:'center',borderBottomWidth:1,borderBottomColor:C.divider}}>
+          <View style={{width:100,height:100,borderRadius:50,overflow:'hidden',marginBottom:14,borderWidth:3,borderColor:C.blueL}}>
+            <LinearGradient colors={d.color||['#0A1628','#1A3A6B']} style={{position:'absolute',width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>
+              {d.image?null:<Text style={{fontSize:52}}>{d.emoji}</Text>}
+            </LinearGradient>
+            {d.image&&<Image source={{uri:d.image}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>}
           </View>
-          <Text style={{fontSize:17,fontWeight:'700',color:'white'}}>{d.name}</Text>
-          <Text style={{fontSize:12,color:C.blue}}>{d.spec}</Text>
-        </LinearGradient>
-        <View style={{flexDirection:'row',borderBottomWidth:1,borderBottomColor:C.bgD}}>
-          {[{n:`${d.exp} سنة`,l:'خبرة'},{n:`${(d.patients/1000).toFixed(1)}K`,l:'مريض'},{n:`${d.rating} ⭐`,l:'تقييم'}].map((s,i)=>(
-            <View key={i} style={{flex:1,padding:14,alignItems:'center',borderLeftWidth:i<2?1:0,borderLeftColor:C.bgD}}>
-              <Text style={{fontSize:16,fontWeight:'700',color:C.navy}}>{s.n}</Text>
-              <Text style={{fontSize:9,color:C.txtL}}>{s.l}</Text>
+          <Text style={{fontSize:19,fontWeight:'800',color:C.navy,marginBottom:4}}>{d.name}</Text>
+          <View style={{backgroundColor:C.blueL,borderRadius:10,paddingHorizontal:12,paddingVertical:4,marginBottom:10}}>
+            <Text style={{fontSize:11,color:C.blueD,fontWeight:'700'}}>{d.spec}</Text>
+          </View>
+          <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+            {[...Array(5)].map((_,i)=>(
+              <Text key={i} style={{fontSize:14,color:i<Math.floor(d.rating)?C.amber:'#D1D5DB'}}>★</Text>
+            ))}
+            <Text style={{fontSize:12,fontWeight:'700',color:C.navy,marginRight:4}}>{d.rating}</Text>
+          </View>
+        </View>
+
+        {/* Stats */}
+        <View style={{...cardStyle,flexDirection:'row',marginHorizontal:16,marginTop:14,overflow:'hidden'}}>
+          {[{n:`${d.exp}`, u:'سنة', l:'خبرة', bg:C.blueL, cl:C.blueD},
+            {n:`${(d.patients/1000).toFixed(1)}K`, u:'', l:'مريض', bg:C.grnL, cl:C.grn},
+            {n:`${d.rating}`, u:'', l:'تقييم', bg:C.amberL, cl:C.amber}
+          ].map((s,i)=>(
+            <View key={i} style={{flex:1,padding:14,alignItems:'center',borderLeftWidth:i<2?1:0,borderLeftColor:C.divider,backgroundColor:s.bg+'66'}}>
+              <Text style={{fontSize:18,fontWeight:'900',color:s.cl}}>{s.n}<Text style={{fontSize:10,color:s.cl}}>{s.u}</Text></Text>
+              <Text style={{fontSize:10,color:C.txtL,marginTop:2}}>{s.l}</Text>
             </View>
           ))}
         </View>
-        <View style={{padding:18}}>
-          <Text style={{fontSize:12,fontWeight:'700',color:C.txtM,marginBottom:8}}>عن الطبيب</Text>
-          <View style={{backgroundColor:C.bgD,borderRadius:12,padding:14,marginBottom:16}}>
+
+        <View style={{paddingHorizontal:16,paddingTop:14}}>
+          {/* About */}
+          <View style={{...cardStyle,padding:16,marginBottom:14}}>
+            <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:10,textAlign:'right'}}>عن الطبيب</Text>
             <Text style={{fontSize:12,color:C.txtM,lineHeight:22,textAlign:'right'}}>{d.bio}</Text>
           </View>
-          <Text style={{fontSize:12,fontWeight:'700',color:C.txtM,marginBottom:8}}>الفروع المتاحة</Text>
-          <View style={{flexDirection:'row',gap:8,flexWrap:'wrap',marginBottom:22}}>
-            {d.branches.map((b,i)=>(
-              <View key={i} style={{backgroundColor:'rgba(36,99,235,0.1)',borderRadius:8,paddingHorizontal:12,paddingVertical:5}}>
-                <Text style={{fontSize:11,color:C.blueD,fontWeight:'700'}}>📍 {b}</Text>
-              </View>
-            ))}
+
+          {/* Available Slots */}
+          <View style={{...cardStyle,padding:16,marginBottom:14}}>
+            <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:4,textAlign:'right'}}>المواعيد المتاحة</Text>
+            <Text style={{fontSize:10,color:C.txtL,marginBottom:12,textAlign:'right'}}>اختر الوقت المناسب</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:8,justifyContent:'flex-end'}}>
+              {AVAIL_SLOTS.map((t,i)=>(
+                <TouchableOpacity key={i} onPress={()=>setSelSlot(i)}
+                  style={{paddingHorizontal:13,paddingVertical:7,borderRadius:10,borderWidth:1.5,
+                    borderColor:selSlot===i?C.blue:C.divider,
+                    backgroundColor:selSlot===i?C.blueL:C.bg}}>
+                  <Text style={{fontSize:12,fontWeight:'700',color:selSlot===i?C.blueD:C.txtM}}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
+
+          {/* Branches */}
+          <View style={{...cardStyle,padding:16,marginBottom:20}}>
+            <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:10,textAlign:'right'}}>الفروع المتاحة</Text>
+            <View style={{flexDirection:'row',gap:8,flexWrap:'wrap',justifyContent:'flex-end'}}>
+              {d.branches.map((b,i)=>(
+                <View key={i} style={{backgroundColor:C.blueL,borderRadius:10,paddingHorizontal:12,paddingVertical:6,borderWidth:1,borderColor:C.bgD}}>
+                  <Text style={{fontSize:11,color:C.blueD,fontWeight:'700'}}>📍 {b}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
           <TouchableOpacity onPress={onBook} activeOpacity={0.85}>
-            <LinearGradient colors={[C.navy,C.navyM]} style={{borderRadius:14,padding:15,alignItems:'center'}}>
-              <Text style={{fontSize:14,fontWeight:'700',color:C.blue}}>احجز موعد مع الطبيب ←</Text>
+            <LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:16,padding:16,alignItems:'center',flexDirection:'row',justifyContent:'center',gap:10}}>
+              <Text style={{fontSize:15,fontWeight:'800',color:'white'}}>احجز موعد</Text>
+              <Text style={{color:'white',fontSize:16}}>←</Text>
             </LinearGradient>
           </TouchableOpacity>
+          <View style={{height:24}}/>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -1795,19 +2002,19 @@ function PrivacyScreen({onBack}){
 
 function BB({title,onBack}){
   return(
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:13,borderBottomWidth:1,borderBottomColor:C.bgD,backgroundColor:C.bg}}>
-      <TouchableOpacity onPress={onBack} style={{width:34,height:34,borderRadius:17,backgroundColor:C.bgD,alignItems:'center',justifyContent:'center'}}>
-        <Text style={{fontSize:22,color:C.navy,lineHeight:24}}>‹</Text>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:14,paddingVertical:12,borderBottomWidth:1,borderBottomColor:C.divider,backgroundColor:C.white}}>
+      <TouchableOpacity onPress={onBack} style={{width:36,height:36,borderRadius:18,backgroundColor:C.bg,borderWidth:1,borderColor:C.divider,alignItems:'center',justifyContent:'center'}}>
+        <Text style={{fontSize:20,color:C.navy,lineHeight:24}}>‹</Text>
       </TouchableOpacity>
-      <Text style={{fontSize:14,fontWeight:'700',color:C.navy}}>{title}</Text>
-      <View style={{width:34}}/>
+      <Text style={{fontSize:15,fontWeight:'800',color:C.navy}}>{title}</Text>
+      <View style={{width:36}}/>
     </View>
   );
 }
 function PH({title}){
   return(
-    <View style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:C.bgD,backgroundColor:C.bg}}>
-      <Text style={{textAlign:'center',fontSize:16,fontWeight:'700',color:C.navy}}>{title}</Text>
+    <View style={{paddingVertical:15,borderBottomWidth:1,borderBottomColor:C.divider,backgroundColor:C.white}}>
+      <Text style={{textAlign:'center',fontSize:17,fontWeight:'800',color:C.navy}}>{title}</Text>
     </View>
   );
 }
