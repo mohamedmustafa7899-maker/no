@@ -275,6 +275,13 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 
   clearLock(user);
+
+  // Block unverified email accounts (only enforced when user HAS an email)
+  if (user.email && !user.emailVerified) {
+    writeDB(db);
+    return res.status(403).json({ ok: false, code: 'EMAIL_NOT_VERIFIED', msg: 'يرجى تفعيل بريدك الإلكتروني أولاً. تحقق من بريدك الوارد.' });
+  }
+
   const rawRefresh = crypto.randomBytes(40).toString('hex');
   createSession(db, user.id, rawRefresh, req);
   addAuditLog(db, 'login', user.id, { ip: req.ip, userAgent: req.headers['user-agent'] });
