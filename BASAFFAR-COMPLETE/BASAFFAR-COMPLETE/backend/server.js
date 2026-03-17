@@ -272,28 +272,39 @@ app.delete('/api/bookings/:id', ...requireRole('admin', 'super_admin'), (req, re
 // ─── CLIENTS (admin only) ──────────────────────────────────────────────────────
 app.get('/api/clients', ...requireRole('admin', 'super_admin'), (req, res) => {
   const db = readDB();
-  // Start with db.clients entries (may contain booking-form-only clients without a user account)
-  const clientMap = {};
-  (db.clients || []).forEach(c => { clientMap[c.id] = { ...c }; });
-  // db.users is the authoritative source for registered users — always overwrite conflicting fields
-  (db.users || []).filter(u => u.role === 'user').forEach(u => {
-    const existing = clientMap[u.id] || {};
-    // db.users always wins for registered-user fields; preserve booking count from db.clients
-    clientMap[u.id] = {
-      ...existing,
+  const users   = (db.users   || []).filter(u => u.role === 'user');
+  const clients = (db.clients || []);
+
+  // Build a lookup of db.clients by id for fast access
+  const clientById = {};
+  clients.forEach(c => { clientById[c.id] = c; });
+
+  // Build set of user IDs to distinguish auth users from booking-only clients
+  const userIds = new Set(users.map(u => u.id));
+
+  // 1. Auth users — db.users is authoritative; merge bookings count from db.clients
+  const result = users.map(u => {
+    const c = clientById[u.id] || {};
+    return {
       id:          u.id,
       name:        u.name,
       email:       u.email,
       phone:       u.phone,
-      idNum:       u.idNum       || existing.idNum       || null,
-      age:         u.age         || existing.age         || null,
-      nationality: u.nationality || existing.nationality || null,
-      bookings:    existing.bookings || u.bookings || 0,
+      idNum:       u.idNum       || c.idNum       || null,
+      age:         u.age         || c.age         || null,
+      nationality: u.nationality || c.nationality || null,
+      bookings:    c.bookings    || u.bookings    || 0,
       joinedAt:    u.createdAt,
     };
   });
-  const merged = Object.values(clientMap).sort((a, b) => new Date(b.joinedAt) - new Date(a.joinedAt));
-  res.json(merged);
+
+  // 2. Booking-form-only clients (no matching user account) — keep as-is
+  clients.forEach(c => {
+    if (!userIds.has(c.id)) result.push({ ...c });
+  });
+
+  result.sort((a, b) => new Date(b.joinedAt) - new Date(a.joinedAt));
+  res.json(result);
 });
 
 // ─── NOTIFICATIONS ─────────────────────────────────────────────────────────────
