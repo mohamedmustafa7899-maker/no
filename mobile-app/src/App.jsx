@@ -501,26 +501,24 @@ function AuthGateScreen({onLogin,onRegister,onSkip}){
   },[]);
   return (
     <View style={{flex:1,backgroundColor:'white'}}>
-      <View style={{flex:1,alignItems:'center',justifyContent:'space-between',paddingTop:90,paddingBottom:52,paddingHorizontal:16}}>
-        <Animated.View style={{alignItems:'center',opacity:fa,transform:[{scale:sc}],width:'100%'}}>
-          <Image
-            source={{uri:'/logo.jpeg'}}
-            style={{width:'100%',height:160}}
-            resizeMode="contain"
-          />
-        </Animated.View>
-        <Animated.View style={{width:'100%',gap:14,opacity:fa,paddingHorizontal:16}}>
+      <Animated.View style={{flex:1,alignItems:'center',justifyContent:'center',paddingHorizontal:28,opacity:fa,transform:[{scale:sc}]}}>
+        <Image
+          source={{uri:'/logo.jpeg'}}
+          style={{width:'100%',height:180,marginBottom:48}}
+          resizeMode="contain"
+        />
+        <View style={{width:'100%',gap:14}}>
           <TouchableOpacity style={{backgroundColor:C.blue,borderRadius:50,paddingVertical:16,alignItems:'center',boxShadow:'0 4px 20px rgba(36,99,235,0.3)'}} onPress={onLogin} activeOpacity={0.88}>
             <Text style={{color:'white',fontSize:16,fontWeight:'800',letterSpacing:0.5}}>تسجيل الدخول</Text>
           </TouchableOpacity>
           <TouchableOpacity style={{borderWidth:1.5,borderColor:C.blue,borderRadius:50,paddingVertical:15,alignItems:'center'}} onPress={onRegister} activeOpacity={0.88}>
             <Text style={{color:C.blue,fontSize:16,fontWeight:'700'}}>إنشاء حساب جديد</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={onSkip} style={{alignItems:'center',paddingVertical:8}} activeOpacity={0.7}>
-            <Text style={{color:'rgba(10,22,40,0.3)',fontSize:13}}>تخطى الآن</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
+        </View>
+        <TouchableOpacity onPress={onSkip} style={{marginTop:24,paddingVertical:8}} activeOpacity={0.7}>
+          <Text style={{color:'rgba(10,22,40,0.28)',fontSize:13}}>تخطى الآن</Text>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
