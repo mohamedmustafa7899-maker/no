@@ -326,6 +326,15 @@
       "idNum": null,
       "bookings": 0,
       "joinedAt": "2026-03-16T23:57:01.031Z"
+    },
+    {
+      "id": 2,
+      "name": "محمحد",
+      "email": "mohamedmustafa7899@gmail.com",
+      "phone": "+966572330922",
+      "idNum": "2542409848",
+      "bookings": 0,
+      "joinedAt": "2026-03-17T10:27:19.877Z"
     }
   ],
   "notifications": [
@@ -377,10 +386,67 @@
       "resetExpires": null,
       "createdAt": "2026-03-16T23:57:01.031Z",
       "bookings": 0
+    },
+    {
+      "id": 2,
+      "name": "محمحد",
+      "email": "mohamedmustafa7899@gmail.com",
+      "phone": "+966572330922",
+      "age": "22",
+      "idNum": "2542409848",
+      "nationality": null,
+      "passwordHash": "$2b$12$FBizPs6UiWkbQKUHVnE5..jv5qNgjsgKhsmRdilln14t6TCnt8Sh2",
+      "role": "user",
+      "emailVerified": false,
+      "verifyToken": "96804ad2ad57c6bc5f2695f663a3581d8ca9a8ef3c34307959fa68233ce755f5",
+      "verifyExpires": 1773829665092,
+      "resetToken": null,
+      "resetExpires": null,
+      "failedAttempts": 0,
+      "lockUntil": null,
+      "createdAt": "2026-03-17T10:27:19.877Z",
+      "bookings": 0
     }
   ],
-  "sessions": [],
+  "sessions": [
+    {
+      "id": "b1289b6f-e56e-418a-9d3a-2e88dbf13f57",
+      "userId": 2,
+      "tokenHash": "29f65751d85a01582f346c6a8e56b51d65f1d3d0329257e29df789e493cad5f1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-03-17T10:27:19.877Z",
+      "lastUsedAt": "2026-03-17T10:27:19.877Z",
+      "expiresAt": "2026-03-24T10:27:19.877Z",
+      "revoked": false
+    }
+  ],
   "auditLog": [
+    {
+      "id": "1773743239877_9752d4",
+      "event": "register",
+      "userId": 2,
+      "ip": "127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.",
+      "extra": {
+        "email": "mohamedmustafa7899@gmail.com"
+      },
+      "timestamp": "2026-03-17T10:27:19.877Z"
+    },
+    {
+      "id": "1773743145467_8c0bb6",
+      "event": "login_failed",
+      "userId": null,
+      "ip": "127.0.0.1",
+      "userAgent": null,
+      "extra": {
+        "extra": {
+          "identifier": "mohamedmustafa7899@gmail.com",
+          "reason": "user_not_found"
+        }
+      },
+      "timestamp": "2026-03-17T10:25:45.467Z"
+    },
     {
       "id": "1773742991727_146ad9",
       "event": "login_failed",
