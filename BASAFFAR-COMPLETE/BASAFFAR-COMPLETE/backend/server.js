@@ -112,9 +112,9 @@ function defaultDB() {
       { id:4, name:'د. ريم الزهراني',nameEn:'Dr. Reem Al-Zahrani', spec:'تجميل وحقن',   specEn:'Cosmetics & Injections', exp:8, rating:4.7, patients:1200, emoji:'👩‍⚕️', color:['#0D1840','#1A2870'], bio:'متخصصة في التجميل الطبي وحقن البوتوكس والفيلر.', branches:['جدة'], active:true },
     ],
     banners: [
-      { id:1, title:'DR BASAFFAR',    subtitle:'رعاية طبية متخصصة بأحدث التقنيات', tag:'مركز باصفار 🏥',    color:['#0A1628','#1A3A6B'], active:true, order:1 },
-      { id:2, title:'زراعة الأسنان', subtitle:'أحدث تقنيات الزراعة الفورية',        tag:'قسم الأسنان 🦷',   color:['#0D2154','#1A4A8A'], active:true, order:2 },
-      { id:3, title:'جلسات الليزر',  subtitle:'تقنية الليزر بالأجهزة الأمريكية',    tag:'الجلدية والليزر ✨',color:['#0A1840','#102060'], active:true, order:3 },
+      { id:1, title:'DR BASAFFAR',    subtitle:'رعاية طبية متخصصة بأحدث التقنيات', tag:'مركز باصفار',    color:['#0A1628','#1A3A6B'], image:'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80', active:true, order:1 },
+      { id:2, title:'زراعة الأسنان', subtitle:'أحدث تقنيات الزراعة الفورية',        tag:'قسم الأسنان',   color:['#0D2154','#1A4A8A'], image:'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=800&q=80', active:true, order:2 },
+      { id:3, title:'جلسات الليزر',  subtitle:'تقنية الليزر بالأجهزة الأمريكية',    tag:'الجلدية والليزر',color:['#0A1840','#102060'], image:'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=800&q=80', active:true, order:3 },
     ],
     branches: [
       { id:1, name:'الرياض — حي النزهة', nameEn:'Riyadh - Al-Nuzha', city:'الرياض', addr:'طريق الملك عبدالله، حي النزهة', phone:'011-234-5678', hours:'8 ص – 10 م', open:true,  depts:['أسنان','جلدية','عيون'], active:true },
