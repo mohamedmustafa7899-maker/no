@@ -557,10 +557,13 @@ function OffersScreen({onOffer,offers:propOffers}){
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
       <PH title="كل العروض"/>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingVertical:11,gap:8}}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingVertical:12,gap:8}}>
         {FILTERS.map(x=>(
-          <TouchableOpacity key={x} onPress={()=>setF(x)} style={{paddingHorizontal:16,paddingVertical:7,borderRadius:20,borderWidth:1,borderColor:f===x?C.navy:C.bgD,backgroundColor:f===x?C.navyM:C.white}}>
-            <Text style={{fontSize:11,fontWeight:'600',color:f===x?'white':C.txtM}}>{x}</Text>
+          <TouchableOpacity key={x} onPress={()=>setF(x)}
+            style={{paddingHorizontal:18,paddingVertical:9,borderRadius:22,borderWidth:1.5,
+              borderColor:f===x?C.blue:C.bgD,
+              backgroundColor:f===x?C.blue:C.white}}>
+            <Text style={{fontSize:12,fontWeight:'700',color:f===x?'white':C.navy}}>{x}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
