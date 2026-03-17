@@ -219,11 +219,9 @@ router.post('/register', registerLimiter, async (req, res) => {
 });
 
 // ─── LOGIN ─────────────────────────────────────────────────────────────────────
+// Note: No CAPTCHA required for login — brute force protection is handled via
+// rate limiter (30 req / 15 min) and account lockout after repeated failures.
 router.post('/login', loginLimiter, async (req, res) => {
-  const { captchaId, captchaAnswer } = req.body;
-  if (!validateCaptcha(captchaId, captchaAnswer))
-    return res.status(400).json({ ok: false, msg: 'إجابة التحقق غير صحيحة، حاول مرة أخرى' });
-
   // Accept identifier = email OR Saudi phone (old `email` field also supported)
   const identifierRaw = sanitize(req.body.identifier || req.body.email || '', 254);
   const password      = typeof req.body.password === 'string' ? req.body.password : '';
