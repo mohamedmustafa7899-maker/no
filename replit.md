@@ -41,6 +41,17 @@ mobile-app/                        # Vite + React Native Web project (port 5000)
 
 ## Security Architecture (Production-Grade)
 
+### Replit Auth (Social Login)
+- **File**: `BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/replitAuth.js`
+- Supports login via Google, GitHub, Apple, X, and email/password through Replit's OpenID Connect provider
+- Uses PKCE flow (secure OAuth 2.0 with code verifier/challenge)
+- After callback: upserts user in `db.json` and issues standard JWT cookies — all existing protected routes work unchanged
+- Sessions stored in `db.sessions[]` with `via: 'replit_auth'` marker
+- Hostname resolved from `APP_URL` env var (safe against host-header injection)
+- Routes: `GET /api/replit-login`, `GET /api/replit-callback`, `GET /api/replit-logout`
+- Frontend: "تسجيل الدخول بـ Replit" button in LoginScreen → `window.location.href = '/api/replit-login'`
+- Packages: `openid-client`, `express-session` (installed in root node_modules)
+
 ### Authentication Flow
 - **httpOnly cookies** — no localStorage: `access_token` (15min, path `/`) + `refresh_token` (7d, path `/api/auth`)
 - **Auto-refresh**: frontend `apiRequest()` detects 401, silently calls `POST /api/auth/refresh`, retries original request (deduped via `_refreshing` promise)

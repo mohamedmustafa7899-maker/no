@@ -140,6 +140,25 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Handle Replit OAuth callback — server redirects to /?replitAuth=1
+    if (typeof window !== 'undefined' && window.location.search.includes('replitAuth=1')) {
+      fetch('/api/replit-user', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.ok) {
+            setLoggedIn(true);
+            setUserName([data.firstName, data.lastName].filter(Boolean).join(' ') || data.email || 'مستخدم Replit');
+            setUserEmail(data.email || '');
+            setEmailVerified(true);
+            setUserRole('user');
+          }
+          // Clean URL
+          window.history.replaceState({}, '', window.location.pathname);
+        })
+        .catch(() => {});
+      return;
+    }
+
     // Check auth state via httpOnly cookie (no localStorage needed)
     apiFetch('/auth/me').then(res => {
       if (res?.ok) {
@@ -942,7 +961,20 @@ function LoginScreen({onBack,onLogin,onRegister,onForgot}){
             <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ التحقق...':'تسجيل الدخول'}</Text>
           </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onRegister} style={{marginTop:20}}>
+        <View style={{width:'100%',flexDirection:'row',alignItems:'center',marginTop:20,marginBottom:4}}>
+          <View style={{flex:1,height:1,backgroundColor:C.bgD}}/>
+          <Text style={{marginHorizontal:10,fontSize:11,color:C.txtL}}>أو</Text>
+          <View style={{flex:1,height:1,backgroundColor:C.bgD}}/>
+        </View>
+        <TouchableOpacity
+          style={{width:'100%',flexDirection:'row',alignItems:'center',justifyContent:'center',backgroundColor:'#1C2333',borderRadius:14,padding:13,marginBottom:8,borderWidth:1,borderColor:'rgba(255,255,255,0.12)',gap:8}}
+          onPress={()=>{ if(typeof window!=='undefined') window.location.href='/api/replit-login'; }}
+          activeOpacity={0.85}
+        >
+          <Text style={{fontSize:18}}>🔷</Text>
+          <Text style={{fontSize:14,fontWeight:'700',color:'white'}}>تسجيل الدخول بـ Replit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onRegister} style={{marginTop:12}}>
           <Text style={{fontSize:12,color:C.txtL}}>ليس لديك حساب؟ <Text style={{color:C.blue,fontWeight:'700'}}>أنشئ حساباً</Text></Text>
         </TouchableOpacity>
         <View style={{height:30}}/>

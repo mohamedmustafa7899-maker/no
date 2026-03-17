@@ -5,6 +5,7 @@ const fs           = require('fs');
 const path         = require('path');
 const { router: authRouter } = require('./auth');
 const { requireAuth, requireRole, requireAdminDashboard, IS_PROD } = require('./authMiddleware');
+const { setupReplitAuth } = require('./replitAuth');
 
 const app  = express();
 const PORT = 3000;
@@ -293,13 +294,24 @@ app.put('/api/settings', ...requireRole('admin', 'super_admin'), (req, res) => {
 app.get('/api/ping', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 // ─── START ──────────────────────────────────────────────────────────────────────
-app.listen(PORT, '0.0.0.0', () => {
-  readDB();
-  console.log('\n╔══════════════════════════════════════╗');
-  console.log(`║  DR BASAFFAR API  →  port ${PORT}       ║`);
-  console.log('╠══════════════════════════════════════╣');
-  console.log('║  Dashboard: localhost:3000 (admin)   ║');
-  console.log(`║  App API:   http://YOUR_IP:${PORT}/api  ║`);
-  console.log(`║  Mode: ${IS_PROD ? 'PRODUCTION' : 'development'}                  ║`);
-  console.log('╚══════════════════════════════════════╝\n');
-});
+async function startServer() {
+  // Set up Replit Auth (registers /api/replit-login, /api/replit-callback, etc.)
+  try {
+    await setupReplitAuth(app);
+  } catch (err) {
+    console.warn('[ReplitAuth] Could not initialize (missing REPL_ID?):', err.message);
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    readDB();
+    console.log('\n╔══════════════════════════════════════╗');
+    console.log(`║  DR BASAFFAR API  →  port ${PORT}       ║`);
+    console.log('╠══════════════════════════════════════╣');
+    console.log('║  Dashboard: localhost:3000 (admin)   ║');
+    console.log(`║  App API:   http://YOUR_IP:${PORT}/api  ║`);
+    console.log(`║  Mode: ${IS_PROD ? 'PRODUCTION' : 'development'}                  ║`);
+    console.log('╚══════════════════════════════════════╝\n');
+  });
+}
+
+startServer();
