@@ -492,7 +492,7 @@ function OnboardingScreen({onDone,onSkip}){
 
 function AuthGateScreen({onLogin,onRegister,onSkip}){
   const fa=useRef(new Animated.Value(0)).current;
-  const sc=useRef(new Animated.Value(0.92)).current;
+  const sc=useRef(new Animated.Value(0.94)).current;
   useEffect(()=>{
     Animated.parallel([
       Animated.timing(fa,{toValue:1,duration:500,useNativeDriver:false}),
@@ -500,33 +500,28 @@ function AuthGateScreen({onLogin,onRegister,onSkip}){
     ]).start();
   },[]);
   return (
-    <View style={{flex:1,backgroundColor:C.navy}}>
-      <LinearGradient colors={['#0A1628','#0F2347']} style={{flex:1,alignItems:'center',justifyContent:'space-between',paddingTop:80,paddingBottom:52,paddingHorizontal:32}}>
-        <View style={{position:'absolute',top:0,left:0,right:0,bottom:0,alignItems:'center',justifyContent:'center',pointerEvents:'none'}}>
-          <View style={{width:400,height:400,borderRadius:200,backgroundColor:'rgba(36,99,235,0.06)'}}/>
-        </View>
+    <View style={{flex:1,backgroundColor:'white'}}>
+      <View style={{flex:1,alignItems:'center',justifyContent:'space-between',paddingTop:90,paddingBottom:52,paddingHorizontal:32}}>
         <Animated.View style={{alignItems:'center',opacity:fa,transform:[{scale:sc}]}}>
-          <View style={{width:100,height:100,borderRadius:30,backgroundColor:'rgba(36,99,235,0.15)',borderWidth:1.5,borderColor:'rgba(36,99,235,0.5)',alignItems:'center',justifyContent:'center',marginBottom:24}}>
-            <svg width="50" height="50" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M24 6 C24 6 10 12 10 26 C10 36 16 42 24 44 C32 42 38 36 38 26 C38 12 24 6 24 6Z" fill="rgba(36,99,235,0.5)" stroke="#93C5FD" strokeWidth="1.5"/>
-              <path d="M20 24 L23 27 L28 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </View>
-          <Text style={{fontSize:30,fontWeight:'900',color:'white',letterSpacing:0.5,marginBottom:6}}>مرحباً بك</Text>
-          <Text style={{fontSize:13,color:'rgba(255,255,255,0.4)',textAlign:'center',lineHeight:20}}>مركز د. سالم باصفار الطبي المتخصص</Text>
+          <Image
+            source={{uri:'/logo.jpeg'}}
+            style={{width:280,height:110,marginBottom:10}}
+            resizeMode="contain"
+          />
+          <Text style={{fontSize:13,color:'rgba(10,22,40,0.4)',textAlign:'center',marginTop:4}}>مرحباً بك في مركز د. سالم باصفار</Text>
         </Animated.View>
         <Animated.View style={{width:'100%',gap:14,opacity:fa}}>
-          <TouchableOpacity style={{backgroundColor:C.blue,borderRadius:50,paddingVertical:16,alignItems:'center',boxShadow:'0 4px 24px rgba(36,99,235,0.4)'}} onPress={onLogin} activeOpacity={0.88}>
+          <TouchableOpacity style={{backgroundColor:C.blue,borderRadius:50,paddingVertical:16,alignItems:'center',boxShadow:'0 4px 20px rgba(36,99,235,0.3)'}} onPress={onLogin} activeOpacity={0.88}>
             <Text style={{color:'white',fontSize:16,fontWeight:'800',letterSpacing:0.5}}>تسجيل الدخول</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={{borderWidth:1.5,borderColor:'rgba(255,255,255,0.25)',borderRadius:50,paddingVertical:15,alignItems:'center'}} onPress={onRegister} activeOpacity={0.88}>
-            <Text style={{color:'white',fontSize:16,fontWeight:'600'}}>إنشاء حساب جديد</Text>
+          <TouchableOpacity style={{borderWidth:1.5,borderColor:C.blue,borderRadius:50,paddingVertical:15,alignItems:'center'}} onPress={onRegister} activeOpacity={0.88}>
+            <Text style={{color:C.blue,fontSize:16,fontWeight:'700'}}>إنشاء حساب جديد</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onSkip} style={{alignItems:'center',paddingVertical:8}} activeOpacity={0.7}>
-            <Text style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>تخطى الآن</Text>
+            <Text style={{color:'rgba(10,22,40,0.3)',fontSize:13}}>تخطى الآن</Text>
           </TouchableOpacity>
         </Animated.View>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
