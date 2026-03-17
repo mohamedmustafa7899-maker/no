@@ -500,31 +500,29 @@ function HomeScreen({onOffer,onDoctor,onBranches,onOffers,onDoctors,loggedIn,use
         <SH title="نخبة أطبائنا" more="عرض الكل" onMore={onDoctors}/>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingBottom:16,gap:12}}>
           {localDoctors.map(d=>(
-            <TouchableOpacity key={d.id} style={{width:138,...cardStyle,overflow:'hidden',paddingBottom:12}} onPress={()=>onDoctor(d)} activeOpacity={0.87}>
-              <View style={{height:96,position:'relative',overflow:'hidden'}}>
+            <TouchableOpacity key={d.id} style={{width:148,...cardStyle,padding:14,alignItems:'center'}} onPress={()=>onDoctor(d)} activeOpacity={0.87}>
+              {/* Circular Avatar */}
+              <View style={{width:74,height:74,borderRadius:37,overflow:'hidden',marginBottom:10,borderWidth:2.5,borderColor:C.blueL}}>
                 <LinearGradient colors={d.color||['#0A1628','#1A3A6B']} style={{position:'absolute',width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>
-                  {d.image?null:<Text style={{fontSize:42}}>{d.emoji||'👨‍⚕️'}</Text>}
+                  {d.image?null:<Text style={{fontSize:34}}>{d.emoji||'👨‍⚕️'}</Text>}
                 </LinearGradient>
                 {d.image&&<Image source={{uri:d.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
-                <LinearGradient colors={['transparent','rgba(10,22,40,0.6)']} style={{position:'absolute',bottom:0,left:0,right:0,height:40}}/>
               </View>
-              <View style={{paddingHorizontal:9,paddingTop:10,paddingBottom:2}}>
-                <Text style={{fontSize:11.5,fontWeight:'800',color:C.navy,marginBottom:2}}>{d.name}</Text>
-                <Text style={{fontSize:9.5,color:C.blue,marginBottom:7,fontWeight:'600'}}>{d.spec}</Text>
-                <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
-                  <View style={{flexDirection:'row',alignItems:'center',gap:2}}>
-                    <Text style={{fontSize:10,color:C.amber}}>★</Text>
-                    <Text style={{fontSize:10,fontWeight:'700',color:C.navy}}>{d.rating}</Text>
-                  </View>
-                  <View style={{backgroundColor:C.bgD,borderRadius:6,paddingHorizontal:6,paddingVertical:2}}>
-                    <Text style={{fontSize:9,color:C.txtM,fontWeight:'600'}}>{d.exp}س خبرة</Text>
-                  </View>
+              <Text style={{fontSize:12,fontWeight:'800',color:C.navy,marginBottom:2,textAlign:'center'}} numberOfLines={1}>{d.name}</Text>
+              <Text style={{fontSize:9.5,color:C.blue,marginBottom:8,fontWeight:'600',textAlign:'center'}} numberOfLines={1}>{d.spec}</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:10}}>
+                <View style={{flexDirection:'row',alignItems:'center',gap:2,backgroundColor:C.amberL,borderRadius:7,paddingHorizontal:7,paddingVertical:3}}>
+                  <Text style={{fontSize:9,color:C.amber}}>★</Text>
+                  <Text style={{fontSize:9,fontWeight:'700',color:'#92400E'}}>{d.rating}</Text>
                 </View>
-                <TouchableOpacity onPress={()=>onDoctor(d)}
-                  style={{backgroundColor:C.blue,borderRadius:10,paddingVertical:7,alignItems:'center'}}>
-                  <Text style={{fontSize:10,fontWeight:'700',color:'white'}}>احجز موعد</Text>
-                </TouchableOpacity>
+                <View style={{backgroundColor:C.bgD,borderRadius:7,paddingHorizontal:7,paddingVertical:3}}>
+                  <Text style={{fontSize:9,color:C.txtM,fontWeight:'600'}}>{d.exp}س</Text>
+                </View>
               </View>
+              <TouchableOpacity onPress={()=>onDoctor(d)}
+                style={{backgroundColor:C.blue,borderRadius:10,paddingVertical:7,paddingHorizontal:16,alignItems:'center',alignSelf:'stretch'}}>
+                <Text style={{fontSize:10,fontWeight:'700',color:'white'}}>احجز موعد</Text>
+              </TouchableOpacity>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -807,7 +805,7 @@ function BookingScreen({loggedIn,onLogin,branches:propBranches,userName,userPhon
         {/* Branch Card */}
         <View style={{...cardStyle,padding:16,marginBottom:14}}>
           <Text style={{fontSize:13,fontWeight:'800',color:C.navy,marginBottom:12,textAlign:'right'}}>اختر الفرع *</Text>
-          {BRANCH_NAMES.map((b,i)=>(
+          {BK_BR.map((b,i)=>(
             <TouchableOpacity key={i} onPress={()=>setBr(i)} style={[B.opt,br===i&&B.optA]}>
               <Text>📍</Text><Text style={[B.optT,br===i&&{color:C.blueD,fontWeight:'700'}]}>{b}</Text>
               <View style={{width:20,height:20,borderRadius:10,borderWidth:2,borderColor:br===i?C.blue:C.bgD,backgroundColor:br===i?C.blue:'transparent',alignItems:'center',justifyContent:'center'}}>
@@ -1017,17 +1015,18 @@ function AllDoctorsScreen({onBack,onDoctor,doctors:propDoctors}){
       <ScrollView contentContainerStyle={{padding:16}}>
         {list.map(d=>(
           <TouchableOpacity key={d.id} onPress={()=>onDoctor(d)} activeOpacity={0.87}
-            style={{...cardStyle,flexDirection:'row',alignItems:'center',marginBottom:12,overflow:'hidden'}}>
-            <View style={{width:90,height:90,position:'relative',overflow:'hidden'}}>
+            style={{...cardStyle,flexDirection:'row',alignItems:'center',marginBottom:12,padding:14}}>
+            {/* Circular Avatar */}
+            <View style={{width:70,height:70,borderRadius:35,overflow:'hidden',marginLeft:12,flexShrink:0,borderWidth:2.5,borderColor:C.blueL}}>
               <LinearGradient colors={d.color||['#0A1628','#1A3A6B']} style={{position:'absolute',width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>
-                {d.image?null:<Text style={{fontSize:44}}>{d.emoji}</Text>}
+                {d.image?null:<Text style={{fontSize:30}}>{d.emoji}</Text>}
               </LinearGradient>
               {d.image&&<Image source={{uri:d.image}} style={{position:'absolute',width:'100%',height:'100%'}} resizeMode="cover"/>}
             </View>
-            <View style={{flex:1,padding:13}}>
+            <View style={{flex:1}}>
               <Text style={{fontSize:14,fontWeight:'800',color:C.navy,marginBottom:3,textAlign:'right'}}>{d.name}</Text>
-              <Text style={{fontSize:11,color:C.blue,marginBottom:7,textAlign:'right',fontWeight:'600'}}>{d.spec}</Text>
-              <View style={{flexDirection:'row',gap:8,justifyContent:'flex-end',alignItems:'center',marginBottom:10}}>
+              <Text style={{fontSize:11,color:C.blue,marginBottom:8,textAlign:'right',fontWeight:'600'}}>{d.spec}</Text>
+              <View style={{flexDirection:'row',gap:7,justifyContent:'flex-end',alignItems:'center',marginBottom:10}}>
                 <View style={{backgroundColor:C.bgD,borderRadius:7,paddingHorizontal:8,paddingVertical:3}}>
                   <Text style={{fontSize:10,color:C.txtM,fontWeight:'600'}}>{d.exp} سنة خبرة</Text>
                 </View>
