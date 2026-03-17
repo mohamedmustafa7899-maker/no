@@ -501,16 +501,15 @@ function AuthGateScreen({onLogin,onRegister,onSkip}){
   },[]);
   return (
     <View style={{flex:1,backgroundColor:'white'}}>
-      <View style={{flex:1,alignItems:'center',justifyContent:'space-between',paddingTop:90,paddingBottom:52,paddingHorizontal:32}}>
-        <Animated.View style={{alignItems:'center',opacity:fa,transform:[{scale:sc}]}}>
+      <View style={{flex:1,alignItems:'center',justifyContent:'space-between',paddingTop:90,paddingBottom:52,paddingHorizontal:16}}>
+        <Animated.View style={{alignItems:'center',opacity:fa,transform:[{scale:sc}],width:'100%'}}>
           <Image
             source={{uri:'/logo.jpeg'}}
-            style={{width:280,height:110,marginBottom:10}}
+            style={{width:'100%',height:160}}
             resizeMode="contain"
           />
-          <Text style={{fontSize:13,color:'rgba(10,22,40,0.4)',textAlign:'center',marginTop:4}}>مرحباً بك في مركز د. سالم باصفار</Text>
         </Animated.View>
-        <Animated.View style={{width:'100%',gap:14,opacity:fa}}>
+        <Animated.View style={{width:'100%',gap:14,opacity:fa,paddingHorizontal:16}}>
           <TouchableOpacity style={{backgroundColor:C.blue,borderRadius:50,paddingVertical:16,alignItems:'center',boxShadow:'0 4px 20px rgba(36,99,235,0.3)'}} onPress={onLogin} activeOpacity={0.88}>
             <Text style={{color:'white',fontSize:16,fontWeight:'800',letterSpacing:0.5}}>تسجيل الدخول</Text>
           </TouchableOpacity>
