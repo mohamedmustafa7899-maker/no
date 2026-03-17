@@ -557,16 +557,19 @@ function OffersScreen({onOffer,offers:propOffers}){
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
       <PH title="كل العروض"/>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingVertical:12,gap:8}}>
-        {FILTERS.map(x=>(
-          <TouchableOpacity key={x} onPress={()=>setF(x)}
-            style={{paddingHorizontal:18,paddingVertical:9,borderRadius:22,borderWidth:1.5,
-              borderColor:f===x?C.blue:C.bgD,
-              backgroundColor:f===x?C.blue:C.white}}>
-            <Text style={{fontSize:12,fontWeight:'700',color:f===x?'white':C.navy}}>{x}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={{height:54,borderBottomWidth:1,borderBottomColor:C.divider,backgroundColor:C.white}}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:16,paddingVertical:10,gap:8}} style={{flex:1}}>
+          {FILTERS.map(x=>(
+            <TouchableOpacity key={x} onPress={()=>setF(x)}
+              style={{paddingHorizontal:16,paddingVertical:6,borderRadius:20,borderWidth:1.5,
+                borderColor:f===x?C.blue:C.bgD,
+                backgroundColor:f===x?C.blue:C.white,
+                alignSelf:'center'}}>
+              <Text style={{fontSize:12,fontWeight:'700',color:f===x?'white':C.navy}}>{x}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
       <ScrollView contentContainerStyle={{paddingHorizontal:16,paddingTop:4}} showsVerticalScrollIndicator={false}>
         {list.map(o=>{
           const disc = o.orig>o.price ? Math.round((1-o.price/o.orig)*100) : 0;
