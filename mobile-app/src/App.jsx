@@ -142,20 +142,16 @@ export default function App() {
   useEffect(() => {
     // Handle Replit OAuth callback — server redirects to /?replitAuth=1
     if (typeof window !== 'undefined' && window.location.search.includes('replitAuth=1')) {
-      fetch('/api/replit-user', { credentials: 'include' })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data?.ok) {
-            setLoggedIn(true);
-            setUserName([data.firstName, data.lastName].filter(Boolean).join(' ') || data.email || 'مستخدم Replit');
-            setUserEmail(data.email || '');
-            setEmailVerified(true);
-            setUserRole('user');
-          }
-          // Clean URL
-          window.history.replaceState({}, '', window.location.pathname);
-        })
-        .catch(() => {});
+      apiFetch('/auth/me').then(res => {
+        if (res?.ok) {
+          setLoggedIn(true);
+          setUserName(res.user.name || '');
+          setUserEmail(res.user.email || '');
+          setEmailVerified(res.user.emailVerified || true);
+          setUserRole(res.user.role || 'user');
+        }
+        window.history.replaceState({}, '', window.location.pathname);
+      }).catch(() => {});
       return;
     }
 

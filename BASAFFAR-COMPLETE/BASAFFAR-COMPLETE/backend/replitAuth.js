@@ -184,7 +184,8 @@ async function setupReplitAuth(app) {
       const user   = upsertReplitUser(claims);
       issueJwtCookies(res, user, req);
 
-      res.redirect('/?replitAuth=1');
+      const appUrl = `https://${getAppDomain()}/?replitAuth=1`;
+      res.redirect(appUrl);
     } catch (err) {
       console.error('[ReplitAuth] callback error:', err.message);
       res.redirect('/api/replit-login');
