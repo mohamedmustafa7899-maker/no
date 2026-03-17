@@ -41,20 +41,29 @@ mobile-app/                        # Vite + React Native Web project (port 5000)
 
 ## Security Architecture (Production-Grade)
 
-### Authentication — Replit Auth (Single Method)
+### Authentication — Email/Phone + Password (Primary Mobile Flow)
+- **Login**: `POST /api/auth/login` accepts `identifier` field = email OR Saudi phone
+  - Saudi phone formats accepted: `05XXXXXXXX`, `+9665XXXXXXXX`, `9665XXXXXXXX`, `009665XXXXXXXX`
+  - `normalizePhone()` converts all formats to `+9665XXXXXXXX` before DB lookup
+  - All bcrypt, rate-limit, account lockout logic preserved unchanged
+- **Register**: `POST /api/auth/register` — validates Saudi phone only; stores normalized phone
+- **Verify Email**: `GET /api/auth/verify-email?token=...` — activates account
+- **Resend Verification**: `POST /api/auth/resend-verification`
+- **Forgot Password**: `POST /api/auth/forgot-password` → sends reset link via email
+- **Reset Password**: `POST /api/auth/reset-password` + HTML reset page served by backend
+
+### Replit Auth (Secondary / OAuth Fallback)
 - **File**: `BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/replitAuth.js`
-- **Single login method**: Replit OpenID Connect (supports Google, GitHub, Apple, X, email/password)
-- Uses PKCE flow (secure OAuth 2.0 with code verifier/challenge)
-- Domain resolved from `REPLIT_DOMAINS` env var (safe against host-header injection)
-- After callback: upserts user in `db.json` and issues standard JWT cookies — all existing protected routes work unchanged
-- Sessions stored in `db.sessions[]` with `via: 'replit_auth'` marker
+- Replit OIDC PKCE flow for optional Google/GitHub/Apple/X login
 - Routes: `GET /api/replit-login`, `GET /api/replit-callback`, `GET /api/replit-logout`
-- Frontend: single "تسجيل الدخول" button in LoginScreen → redirects to Replit OAuth
-- Packages: `openid-client`, `express-session` (installed in root node_modules)
+- Backend endpoints active but NOT shown in mobile app UI
+- Domain resolved from `REPLIT_DOMAINS` env var
 
 ### JWT Cookie Flow (Post-Login)
 - **httpOnly cookies** — no localStorage: `access_token` (15min, path `/`) + `refresh_token` (7d, path `/api/auth`)
-- **Auto-refresh**: frontend `apiRequest()` detects 401, silently calls `POST /api/auth/refresh`, retries original request
+- **Auto-refresh on startup**: App opens → tries `/auth/me` → if 401 tries `/auth/refresh` → retries `/auth/me` → only logs out if refresh also fails
+- **Persistent login**: User stays logged in 7 days without re-entering credentials (refresh token auto-renews access token)
+- **Loading guard**: `isCheckingAuth` state prevents login screen flash — shows loading screen until auth check completes
 - Cookies: `secure: true` + `sameSite: 'lax'` on Replit/production (HTTPS detected via `REPLIT_DOMAINS`)
 
 ### CORS

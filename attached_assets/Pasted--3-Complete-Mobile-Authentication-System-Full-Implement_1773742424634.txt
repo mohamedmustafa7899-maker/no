@@ -1,0 +1,235 @@
+#3 - Complete Mobile Authentication System (Full Implementation)
+
+What & Why
+Restore and improve the mobile app authentication system and connect it properly to the existing auth.js backend.
+
+The system must support:
+- Login with email OR Saudi mobile number
+- New account registration
+- Email verification
+- Forgot/reset password via email
+- Persistent login after closing and reopening the app (7 days via refresh token)
+
+IMPORTANT:
+- The backend auth system already exists in auth.js → DO NOT rebuild it
+- Replit Auth should NOT be used in the main mobile flow
+- Only fix, connect, and improve what already exists
+
+--------------------------------------------------
+
+DONE LOOKS LIKE
+
+- Login screen:
+  - One input: (Email OR Saudi Mobile Number)
+  - Password field with show/hide
+  - Loading state
+  - Clear inline validation errors
+
+- Accept:
+  - Valid email → login normally
+  - Saudi phone → normalized to +9665XXXXXXXX then login
+
+- Buttons:
+  - "Create New Account" → opens Register screen
+  - "Forgot Password" → opens Forgot Password screen
+
+- Register screen:
+  - Accepts ONLY Saudi phone numbers
+  - Validates all fields strictly
+
+- After login/register:
+  - User stays logged in after app restart
+  - Access token auto refreshes using refresh token
+  - No repeated login required unless refresh fails
+
+- Replit login button:
+  - Must NOT appear in the mobile auth flow
+
+--------------------------------------------------
+
+TASKS
+
+1) Improve Saudi phone validation (Backend)
+File:
+BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/auth.js
+
+- Update phone validation to accept ONLY Saudi numbers:
+  - 05XXXXXXXX
+  - +9665XXXXXXXX
+  - 9665XXXXXXXX
+  - 009665XXXXXXXX
+
+- Create function:
+normalizePhone(phone)
+
+- It must convert ALL valid formats into:
++9665XXXXXXXX
+
+- Apply normalization:
+  - During registration
+  - During login
+  - Before saving in database
+
+--------------------------------------------------
+
+2) Add login using email OR phone (Backend)
+
+In:
+POST /api/auth/login
+
+- Accept one field: identifier
+
+Logic:
+- If identifier is email → normalize → search by email
+- If identifier is phone → normalize → search by phone
+
+IMPORTANT:
+- Keep ALL existing logic unchanged:
+  - bcrypt
+  - rate limiting
+  - brute force protection
+  - account lockout
+
+--------------------------------------------------
+
+3) Rebuild Login Screen (Frontend)
+
+File:
+mobile-app/src/App.jsx
+
+Create a full login UI:
+
+- Field:
+  "Email or Saudi Mobile Number"
+
+- Password field:
+  - show/hide toggle
+
+- Features:
+  - Loading state
+  - Inline validation errors
+  - Disable button during loading
+
+- Buttons:
+  - Login
+  - Create Account
+  - Forgot Password
+
+- Use:
+apiPost('/auth/login')
+
+--------------------------------------------------
+
+4) Connect Register + Forgot Password screens
+
+- Ensure:
+  RegisterScreen
+  ForgotPasswordScreen
+
+are properly linked in navigation
+
+- Update Register validation:
+  - Saudi phone only (no generic regex)
+
+--------------------------------------------------
+
+5) FIX Persistent Session (VERY IMPORTANT)
+
+File:
+mobile-app/src/App.jsx
+
+Fix auth flow on app startup:
+
+REQUIRED FLOW:
+
+1. Call:
+   /api/auth/me
+
+2. If fails (401 / expired):
+   call /api/auth/refresh
+
+3. If refresh succeeds:
+   retry /api/auth/me
+
+4. If refresh fails:
+   THEN logout and go to Login
+
+IMPORTANT RULES:
+
+- DO NOT logout user immediately
+- DO NOT call clearAuthState() before trying refresh
+- ONLY logout if refresh fails
+
+--------------------------------------------------
+
+6) Add Splash / Loading State
+
+During app start:
+
+- Show loading screen while checking auth
+- Do NOT flash login screen before check finishes
+
+Use state like:
+- isCheckingAuth
+- authLoading
+
+--------------------------------------------------
+
+7) Ensure cookies/session works
+
+- All API requests must include credentials:
+  (cookies must be sent properly)
+
+- Do NOT store password locally
+- Tokens handled by cookies only
+
+--------------------------------------------------
+
+8) UX Improvements
+
+- Show backend error messages clearly
+- Disable buttons during loading
+- If account not verified:
+  show message + allow resend email
+
+- Phone validation error example:
+  "Enter a valid Saudi number (05XXXXXXXX)"
+
+--------------------------------------------------
+
+IMPORTANT FILES
+
+Backend:
+BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/auth.js
+
+Frontend:
+mobile-app/src/App.jsx
+
+--------------------------------------------------
+
+FINAL OUTPUT REQUIRED
+
+After implementation, provide:
+
+1. Files changed
+2. What was modified in each file
+3. Endpoints used
+4. Testing steps:
+
+- Register
+- Email verification
+- Login with email
+- Login with phone
+- Forgot password
+- Reset password
+- Close app → reopen → still logged in
+- Token expires → auto refresh → still logged in
+
+--------------------------------------------------
+
+CRITICAL RULES
+
+- DO NOT create new auth system
+- DO NOT break existing auth.js
+- DO NOT rely on Replit Auth for mobile
+- ONLY connect + fix + enhance

@@ -134,39 +134,54 @@ export default function App() {
   const [apiBanners, setApiBanners] = useState(BANNERS);
   const [apiBranches,setApiBranches]= useState(BRANCHES_LIST);
   const [apiLoaded,  setApiLoaded]  = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const clearAuthState = () => {
     setLoggedIn(false); setUserName(''); setUserEmail(''); setEmailVerified(false); setUserRole('user');
+  };
+
+  const applyUser = (user) => {
+    setLoggedIn(true);
+    setUserName(user.name || '');
+    setUserEmail(user.email || '');
+    setEmailVerified(user.emailVerified || false);
+    setUserRole(user.role || 'user');
   };
 
   useEffect(() => {
     // Handle Replit OAuth callback — server redirects to /?replitAuth=1
     if (typeof window !== 'undefined' && window.location.search.includes('replitAuth=1')) {
       apiFetch('/auth/me').then(res => {
-        if (res?.ok) {
-          setLoggedIn(true);
-          setUserName(res.user.name || '');
-          setUserEmail(res.user.email || '');
-          setEmailVerified(res.user.emailVerified || true);
-          setUserRole(res.user.role || 'user');
-        }
+        if (res?.ok) applyUser(res.user);
         window.history.replaceState({}, '', window.location.pathname);
-      }).catch(() => {});
+        setIsCheckingAuth(false);
+      }).catch(() => setIsCheckingAuth(false));
       return;
     }
 
-    // Check auth state via httpOnly cookie (no localStorage needed)
-    apiFetch('/auth/me').then(res => {
-      if (res?.ok) {
-        setLoggedIn(true);
-        setUserName(res.user.name || '');
-        setUserEmail(res.user.email || '');
-        setEmailVerified(res.user.emailVerified || false);
-        setUserRole(res.user.role || 'user');
-      } else if (res?._sessionExpired) {
-        clearAuthState();
-      }
-    });
+    // Proper startup auth check:
+    // 1. Try /auth/me
+    // 2. If fails (401/expired), try /auth/refresh FIRST
+    // 3. If refresh succeeds, retry /auth/me
+    // 4. Only clear auth state if refresh also fails
+    const checkAuth = async () => {
+      try {
+        const meRes = await apiFetch('/auth/me');
+        if (meRes?.ok) {
+          applyUser(meRes.user);
+        } else {
+          // Try refresh before giving up
+          const refreshRes = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+          if (refreshRes.ok) {
+            const me2 = await apiFetch('/auth/me');
+            if (me2?.ok) applyUser(me2.user);
+          }
+          // If refresh also failed — user stays logged out (already default state)
+        }
+      } catch(e) { /* network error — stay logged out */ }
+      setIsCheckingAuth(false);
+    };
+    checkAuth();
 
     const loadData = async () => {
       const [depts, offers, doctors, banners, branches] = await Promise.all([
@@ -186,14 +201,7 @@ export default function App() {
     loadData();
   }, []);
 
-  const handleLogin = (user) => {
-    // Token is now in httpOnly cookie set by server
-    setLoggedIn(true);
-    setUserName(user.name || '');
-    setUserEmail(user.email || '');
-    setEmailVerified(user.emailVerified || false);
-    setUserRole(user.role || 'user');
-  };
+  const handleLogin = (user) => { applyUser(user); };
   const handleLogout = async () => {
     await apiPost('/auth/logout', {});
     clearAuthState();
@@ -207,10 +215,13 @@ export default function App() {
   const removeFromCart = (id) => setCart(c => c.filter(i => i.cartId !== id));
   const clearCart = () => setCart([]);
 
+  if (isCheckingAuth) return <AuthLoadingScreen />;
   if (screen==='splash') return <Splash onDone={()=>go('tabs')} />;
   if (screen==='offerDetail') return <OfferDetail offer={param} onBack={()=>go('tabs')} onAdd={(o,q,b)=>{addToCart(o,q,b);goTab('cart');}} />;
   if (screen==='doctorDetail') return <DoctorDetail doctor={param} onBack={()=>go('tabs')} onBook={()=>goTab('booking')} />;
-  if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} />;
+  if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} onLogin={(u)=>{handleLogin(u);go('tabs');}} onRegister={()=>go('register')} onForgotPassword={()=>go('forgotPassword')} />;
+  if (screen==='register') return <RegisterScreen onBack={()=>go('login')} onDone={(u)=>{handleLogin(u);go('tabs');}} />;
+  if (screen==='forgotPassword') return <ForgotPasswordScreen onBack={()=>go('login')} />;
   if (screen==='allDoctors') return <AllDoctorsScreen onBack={()=>go('tabs')} onDoctor={d=>go('doctorDetail',d)} doctors={apiDoctors} />;
   if (screen==='branches') return <BranchesScreen onBack={()=>go('tabs')} branches={apiBranches} />;
   if (screen==='profile') return <ProfileScreen onBack={()=>go('tabs')} userName={userName} userEmail={userEmail} emailVerified={emailVerified} onVerifiedUpdate={()=>setEmailVerified(true)} />;
@@ -892,38 +903,139 @@ function CaptchaField({captcha,onRefresh,value,onChange}){
   );
 }
 
-function LoginScreen({onBack}){
+function AuthLoadingScreen(){
+  return(
+    <View style={{flex:1,backgroundColor:C.bg,alignItems:'center',justifyContent:'center'}}>
+      <LinearGradient colors={['#0A1628','#0F2347']} style={{width:88,height:88,borderRadius:24,alignItems:'center',justifyContent:'center',marginBottom:20,borderWidth:2,borderColor:'rgba(36,99,235,0.4)'}}>
+        <View style={{width:50,height:3,backgroundColor:C.blue,borderRadius:2,marginBottom:4}}/>
+        <Text style={{fontSize:10,fontWeight:'900',color:'white',letterSpacing:1.2}}>DR BASAFFAR</Text>
+      </LinearGradient>
+      <Text style={{fontSize:13,color:C.txtL,marginTop:8}}>جارٍ التحقق من الجلسة...</Text>
+    </View>
+  );
+}
+
+// ─── helpers shared by login & register ──────────────────────────────────────
+const isSaudiPhoneFE = (s) => /^(05\d{8}|(\+966|00966|966)5\d{8})$/.test((s||'').replace(/[\s\-()]/g,''));
+const isEmailFE      = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s||'');
+
+function LoginScreen({onBack, onLogin, onRegister, onForgotPassword}){
+  const [identifier,setIdentifier]=useState('');
+  const [password,  setPassword]  =useState('');
+  const [showPw,    setShowPw]    =useState(false);
+  const [loading,   setLoading]   =useState(false);
+  const [err,       setErr]       =useState('');
+  const [unverified,setUnverified]=useState(false);
+
+  const validateId=(val)=>{
+    const v=(val||'').trim();
+    if(!v) return 'يرجى إدخال البريد الإلكتروني أو رقم الجوال';
+    if(isSaudiPhoneFE(v)||isEmailFE(v)) return null;
+    if(/^\d/.test(v)) return 'يرجى إدخال رقم جوال سعودي صحيح (05XXXXXXXX)';
+    return 'يرجى إدخال بريد إلكتروني صحيح أو رقم جوال سعودي';
+  };
+
+  const login=async()=>{
+    setErr(''); setUnverified(false);
+    const idErr=validateId(identifier);
+    if(idErr){setErr(idErr);return;}
+    if(!password){setErr('يرجى إدخال كلمة المرور');return;}
+    setLoading(true);
+    const res=await apiPost('/auth/login',{identifier:identifier.trim(),password});
+    setLoading(false);
+    if(res?.ok){
+      onLogin(res.user);
+    } else if(res?.code==='EMAIL_NOT_VERIFIED'){
+      setUnverified(true);
+      setErr(res.msg||'البريد الإلكتروني غير مفعّل. تحقق من بريدك.');
+    } else {
+      setErr(res?.msg||'حدث خطأ، حاول مرة أخرى');
+    }
+  };
+
+  const resendVerification=async()=>{
+    if(!isEmailFE(identifier.trim())){setErr('أدخل البريد الإلكتروني لإعادة الإرسال');return;}
+    const res=await apiPost('/auth/resend-verification',{email:identifier.trim()});
+    if(res?.ok) setErr('تم إرسال رابط التفعيل إلى بريدك ✅');
+    else setErr(res?.msg||'حدث خطأ، حاول لاحقاً');
+  };
+
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
       <BB title="تسجيل الدخول" onBack={onBack}/>
-      <View style={{flex:1,justifyContent:'center',alignItems:'center',padding:32}}>
-        <LinearGradient colors={['#0A1628','#0F2347']} style={{width:100,height:100,borderRadius:28,alignItems:'center',justifyContent:'center',marginBottom:24,gap:6,borderWidth:2,borderColor:'rgba(36,99,235,0.4)'}}>
-          <View style={{width:60,height:3.5,backgroundColor:C.blue,borderRadius:2}}/>
-          <Text style={{fontSize:12,fontWeight:'900',color:'white',letterSpacing:1.5}}>DR BASAFFAR</Text>
+      <ScrollView contentContainerStyle={{padding:24,alignItems:'center'}} keyboardShouldPersistTaps="handled">
+        <LinearGradient colors={['#0A1628','#0F2347']} style={{width:88,height:88,borderRadius:24,alignItems:'center',justifyContent:'center',marginBottom:20,borderWidth:2,borderColor:'rgba(36,99,235,0.4)'}}>
+          <View style={{width:50,height:3,backgroundColor:C.blue,borderRadius:2,marginBottom:4}}/>
+          <Text style={{fontSize:10,fontWeight:'900',color:'white',letterSpacing:1.2}}>DR BASAFFAR</Text>
         </LinearGradient>
+        <Text style={{fontSize:22,fontWeight:'800',color:C.navy,marginBottom:6}}>مرحباً بك</Text>
+        <Text style={{fontSize:12,color:C.txtL,marginBottom:28,textAlign:'center'}}>سجّل دخولك للوصول إلى حسابك</Text>
 
-        <Text style={{fontSize:24,fontWeight:'800',color:C.navy,marginBottom:6}}>مرحباً بك</Text>
-        <Text style={{fontSize:13,color:C.txtL,marginBottom:8,textAlign:'center',lineHeight:20}}>
-          سجّل دخولك للوصول إلى حسابك ومتابعة حجوزاتك
-        </Text>
-        <Text style={{fontSize:11,color:C.txtL,marginBottom:36,textAlign:'center'}}>
-          يمكنك الدخول بحساب Google أو GitHub أو Apple أو البريد الإلكتروني
-        </Text>
+        {err?(
+          <View style={{width:'100%',backgroundColor:C.redL,borderRadius:10,padding:10,marginBottom:14}}>
+            <Text style={{fontSize:12,color:C.red,textAlign:'right'}}>{err}</Text>
+            {unverified&&isEmailFE(identifier.trim())&&(
+              <TouchableOpacity onPress={resendVerification} style={{marginTop:8}}>
+                <Text style={{fontSize:12,color:C.blue,fontWeight:'700',textAlign:'right'}}>إعادة إرسال رابط التفعيل</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ):null}
 
-        <TouchableOpacity
-          style={{width:'100%',maxWidth:320}}
-          onPress={()=>{ if(typeof window!=='undefined') window.location.href='/api/replit-login'; }}
-          activeOpacity={0.85}
-        >
-          <LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:16,padding:16,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10}}>
-            <Text style={{fontSize:17,fontWeight:'800',color:'white'}}>تسجيل الدخول</Text>
+        <View style={{width:'100%',marginBottom:14}}>
+          <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>البريد الإلكتروني أو رقم الجوال</Text>
+          <TextInput
+            style={{backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,padding:12,fontSize:13,color:C.txt}}
+            placeholder="example@email.com  أو  05XXXXXXXX"
+            value={identifier}
+            onChangeText={v=>{setIdentifier(v);setErr('');setUnverified(false);}}
+            keyboardType="email-address"
+            textAlign="right"
+            placeholderTextColor={C.txtL}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+
+        <View style={{width:'100%',marginBottom:8}}>
+          <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>كلمة المرور</Text>
+          <View style={{flexDirection:'row',alignItems:'center',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,paddingHorizontal:10}}>
+            <TouchableOpacity onPress={()=>setShowPw(p=>!p)} style={{padding:6}}>
+              <Text style={{fontSize:16,color:C.txtL}}>{showPw?'🙈':'👁️'}</Text>
+            </TouchableOpacity>
+            <TextInput
+              style={{flex:1,padding:12,fontSize:13,color:C.txt}}
+              placeholder="كلمة المرور"
+              value={password}
+              onChangeText={v=>{setPassword(v);setErr('');}}
+              secureTextEntry={!showPw}
+              textAlign="right"
+              placeholderTextColor={C.txtL}
+            />
+          </View>
+        </View>
+
+        <TouchableOpacity onPress={onForgotPassword} style={{alignSelf:'flex-end',marginBottom:24}}>
+          <Text style={{fontSize:12,color:C.blue,fontWeight:'600'}}>نسيت كلمة المرور؟</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={{width:'100%',marginBottom:14}} onPress={login} disabled={loading} activeOpacity={0.85}>
+          <LinearGradient colors={loading?['#6B86AA','#4A6090']:[C.blue,C.blueD]} style={{borderRadius:14,padding:15,alignItems:'center'}}>
+            <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ الدخول...':'تسجيل الدخول'}</Text>
           </LinearGradient>
         </TouchableOpacity>
+
+        <View style={{flexDirection:'row',alignItems:'center',gap:6,marginTop:4}}>
+          <TouchableOpacity onPress={onRegister}>
+            <Text style={{fontSize:13,color:C.blue,fontWeight:'700'}}>إنشاء حساب جديد</Text>
+          </TouchableOpacity>
+          <Text style={{fontSize:13,color:C.txtL}}>ليس لديك حساب؟</Text>
+        </View>
 
         <Text style={{fontSize:10,color:C.txtL,marginTop:24,textAlign:'center',lineHeight:16}}>
           بالمتابعة، أنت توافق على سياسة الخصوصية وشروط الاستخدام
         </Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -960,9 +1072,9 @@ function RegisterScreen({onBack,onDone}){
   const reg=async()=>{
     setErr('');
     if(!v.name.trim()){setErr('يرجى إدخال الاسم الكامل');return;}
-    const emailRx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if(!v.email.trim()||!emailRx.test(v.email.trim())){setErr('يرجى إدخال بريد إلكتروني صحيح');return;}
-    if(!v.phone.trim()){setErr('يرجى إدخال رقم الهاتف');return;}
+    if(!v.email.trim()||!isEmailFE(v.email.trim())){setErr('يرجى إدخال بريد إلكتروني صحيح');return;}
+    if(!v.phone.trim()){setErr('يرجى إدخال رقم الجوال');return;}
+    if(!isSaudiPhoneFE(v.phone.trim())){setErr('يرجى إدخال رقم جوال سعودي صحيح (05XXXXXXXX)');return;}
     const pwErr=validatePassword(v.pass);
     if(pwErr){setErr(pwErr);return;}
     if(v.pass!==v.pass2){setErr('كلمتا المرور غير متطابقتين');return;}
@@ -985,13 +1097,13 @@ function RegisterScreen({onBack,onDone}){
         {[
           {k:'name', lbl:'الاسم الكامل *',        kb:'default',       sc:false},
           {k:'email',lbl:'البريد الإلكتروني *',    kb:'email-address', sc:false,cap:'none'},
-          {k:'phone',lbl:'رقم الهاتف *',           kb:'phone-pad',     sc:false},
+          {k:'phone',lbl:'رقم الجوال السعودي *',     kb:'phone-pad',     sc:false,ph:'05XXXXXXXX'},
           {k:'age',  lbl:'العمر',                  kb:'number-pad',    sc:false},
           {k:'id',   lbl:'رقم الهوية أو الإقامة', kb:'number-pad',    sc:false},
         ].map((f,i)=>(
           <View key={i} style={{marginBottom:12}}>
             <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>{f.lbl}</Text>
-            <TextInput style={{backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:11,fontSize:13,color:C.txt}} placeholder={f.lbl.replace(' *','')} value={v[f.k]} onChangeText={val=>{s(f.k)(val);setErr('');}} keyboardType={f.kb} secureTextEntry={f.sc} textAlign="right" placeholderTextColor={C.txtL} autoCapitalize={f.cap||'words'}/>
+            <TextInput style={{backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:10,padding:11,fontSize:13,color:C.txt}} placeholder={f.ph||f.lbl.replace(' *','')} value={v[f.k]} onChangeText={val=>{s(f.k)(val);setErr('');}} keyboardType={f.kb} secureTextEntry={f.sc} textAlign="right" placeholderTextColor={C.txtL} autoCapitalize={f.cap||'words'}/>
           </View>
         ))}
 

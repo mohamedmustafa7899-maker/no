@@ -380,5 +380,48 @@
     }
   ],
   "sessions": [],
-  "auditLog": []
+  "auditLog": [
+    {
+      "id": "1773742991727_146ad9",
+      "event": "login_failed",
+      "userId": null,
+      "ip": "127.0.0.1",
+      "userAgent": null,
+      "extra": {
+        "extra": {
+          "identifier": "+966501234567",
+          "reason": "user_not_found"
+        }
+      },
+      "timestamp": "2026-03-17T10:23:11.727Z"
+    },
+    {
+      "id": "1773742982600_993505",
+      "event": "login_failed",
+      "userId": null,
+      "ip": "127.0.0.1",
+      "userAgent": null,
+      "extra": {
+        "extra": {
+          "identifier": "0501234567",
+          "reason": "user_not_found"
+        }
+      },
+      "timestamp": "2026-03-17T10:23:02.600Z"
+    },
+    {
+      "id": "1773742977271_a70bbe",
+      "event": "login_failed",
+      "userId": null,
+      "ip": "127.0.0.1",
+      "userAgent": null,
+      "extra": {
+        "extra": {
+          "identifier": "0501234567",
+          "reason": "user_not_found"
+        }
+      },
+      "timestamp": "2026-03-17T10:22:57.271Z"
+    }
+  ]
 }
