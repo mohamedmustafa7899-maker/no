@@ -1,0 +1,192 @@
+#5 - Full Integration Between Bookings and Users
+
+What & Why
+The booking flow must be fully connected to authenticated users so that:
+- bookings created from the mobile app appear correctly in the admin dashboard
+- each logged-in user sees only their own bookings
+- each booking is linked to the correct user account
+- duplicate client records in db.clients are cleaned up
+
+Current issues:
+- BookingScreen does not attach bookings to the logged-in user
+- GET /api/bookings returns all bookings to every user
+- POST /api/bookings does not save userId correctly
+- POST /api/bookings creates/updates client records incorrectly using nextId instead of the logged-in user's real id
+- db.clients contains duplicate records (including duplicate id=1)
+
+Done looks like
+- When a user books from the app, the booking appears immediately in the dashboard under Bookings
+- “My Bookings” shows only the current logged-in user’s bookings
+- If the user is logged in, their name is auto-filled in the booking form
+- userId is saved on every booking
+- db.clients is cleaned so duplicate records are removed
+- No more client/user ID mismatch for logged-in users
+
+Out of scope
+- Push notifications
+- Payments for bookings
+- Rebuilding the booking system from scratch
+
+--------------------------------------------------
+TASKS
+--------------------------------------------------
+
+1) Fix BookingScreen in App.jsx
+File:
+mobile-app/src/App.jsx
+
+Required changes:
+- Update BookingScreen to receive:
+  - userName
+  - userId
+
+- When the screen loads:
+  - if the user is logged in, get the current user from existing auth state or /auth/me
+  - auto-fill the booking form with:
+    - user name
+    - phone number if available
+
+- When submitting bookingData to the API:
+  - include userId for logged-in users
+
+- Update the place where BookingScreen is rendered (around the existing line mentioned in App.jsx) so it passes:
+  - userName
+  - userId
+
+Expected behavior:
+- logged-in user does not need to manually retype their name every time
+- booking request is linked to the real authenticated user
+
+--------------------------------------------------
+
+2) Fix POST /api/bookings in server.js
+File:
+BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js
+
+Required changes:
+- When saving a booking, include:
+  - userId: req.user.id
+  if the request is authenticated
+
+- Fix client handling logic:
+  - if req.user exists:
+    - first search db.clients by:
+      id === req.user.id
+    - if found, update that same client record instead of creating a new one
+    - do NOT create a new client using nextId for a logged-in user who already has an account
+
+  - if req.user does NOT exist:
+    - keep fallback behavior using phone lookup as needed
+
+Goal:
+- prevent duplicate client creation for logged-in users
+- ensure bookings are linked to the correct user account
+- make dashboard/client relation consistent
+
+--------------------------------------------------
+
+3) Fix GET /api/bookings in server.js
+File:
+BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js
+
+Required behavior:
+- if logged-in user role is:
+  - admin
+  - super_admin
+  return all bookings as usual
+
+- if logged-in user role is normal:
+  - user
+  return ONLY bookings where:
+  b.userId === req.user.id
+
+This is critical.
+Right now all users can see all bookings, which is incorrect.
+
+Goal:
+- regular users see only their own bookings
+- admins still see everything
+
+--------------------------------------------------
+
+4) Clean db.json duplicates
+File:
+BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/db.json
+
+Required cleanup:
+- remove duplicate records from db.clients
+- especially duplicated entries with the same id (for example duplicate id=1)
+- keep only one correct client record per unique id
+
+Rules:
+- do not leave multiple client entries with the same id
+- preserve the most correct and complete record
+- keep data structure valid
+- after cleanup, client IDs must remain consistent with authenticated users
+
+--------------------------------------------------
+
+5) Keep compatibility with existing auth system
+Important:
+- do NOT create a new auth model
+- do NOT break existing auth.js logic
+- use req.user from the existing authentication middleware if already available
+- keep the current role model intact
+
+--------------------------------------------------
+
+6) Frontend behavior requirements
+In the mobile app:
+- booking form should auto-fill user name for logged-in users
+- if phone exists for the logged-in user, auto-fill it too
+- “My Bookings” must call the same endpoint but only show current user data because backend now filters correctly
+- if user is not logged in, booking behavior can continue as guest only if that flow already exists
+- if the screen depends on auth state, use the existing app auth state instead of building a new one
+
+--------------------------------------------------
+
+7) Data consistency requirements
+Make sure:
+- every booking created by a logged-in user stores the correct userId
+- client records do not drift away from authenticated user records
+- dashboard can trace bookings back to the correct user/client
+- no duplicate client record is created for the same authenticated account
+
+--------------------------------------------------
+
+Relevant files
+- mobile-app/src/App.jsx
+- BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/server.js
+- BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/db.json
+
+--------------------------------------------------
+
+Final output required after implementation
+Please provide:
+1. Files changed
+2. Exact logic changed in each file
+3. How bookings are now linked to users
+4. How GET /api/bookings behaves for:
+   - user
+   - admin
+   - super_admin
+5. What duplicate client records were removed
+6. How to test:
+
+- login as normal user
+- create booking from app
+- confirm it appears in dashboard
+- confirm My Bookings shows only that user’s bookings
+- login as another user
+- confirm they cannot see the first user’s bookings
+- login as admin
+- confirm admin still sees all bookings
+
+--------------------------------------------------
+
+Critical rules
+- Do NOT rebuild the booking system
+- Do NOT remove existing dashboard behavior for admins
+- Do NOT create duplicate clients for logged-in users
+- Do NOT return all bookings to normal users
+- Use the real authenticated user id wherever possible
