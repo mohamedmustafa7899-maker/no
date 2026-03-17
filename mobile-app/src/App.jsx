@@ -130,6 +130,8 @@ export default function App() {
   const [loggedIn,      setLoggedIn]      = useState(false);
   const [userName,      setUserName]      = useState('');
   const [userEmail,     setUserEmail]     = useState('');
+  const [userPhone,     setUserPhone]     = useState('');
+  const [userId,        setUserId]        = useState(null);
   const [emailVerified, setEmailVerified] = useState(false);
   const [userRole,      setUserRole]      = useState('user');
 
@@ -142,13 +144,15 @@ export default function App() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const clearAuthState = () => {
-    setLoggedIn(false); setUserName(''); setUserEmail(''); setEmailVerified(false); setUserRole('user');
+    setLoggedIn(false); setUserName(''); setUserEmail(''); setUserPhone(''); setUserId(null); setEmailVerified(false); setUserRole('user');
   };
 
   const applyUser = (user) => {
     setLoggedIn(true);
     setUserName(user.name || '');
     setUserEmail(user.email || '');
+    setUserPhone(user.phone || '');
+    setUserId(user.id || null);
     setEmailVerified(user.emailVerified || false);
     setUserRole(user.role || 'user');
   };
@@ -246,7 +250,7 @@ export default function App() {
       {tab==='home'    && <HomeScreen    onOffer={o=>go('offerDetail',o)} onDoctor={d=>go('doctorDetail',d)} onBranches={()=>go('branches')} onOffers={()=>setTab('offers')} onDoctors={()=>go('allDoctors')} loggedIn={loggedIn} userName={userName} onLogin={()=>go('login')} depts={apiDepts} offers={apiOffers} doctors={apiDoctors} banners={apiBanners} />}
       {tab==='offers'  && <OffersScreen  onOffer={o=>go('offerDetail',o)} offers={apiOffers} />}
       {tab==='cart'    && <CartScreen    cart={cart} remove={removeFromCart} loggedIn={loggedIn} onLogin={()=>go('login')} clear={clearCart} />}
-      {tab==='booking' && <BookingScreen loggedIn={loggedIn} onLogin={()=>go('login')} branches={apiBranches} />}
+      {tab==='booking' && <BookingScreen loggedIn={loggedIn} onLogin={()=>go('login')} branches={apiBranches} userName={userName} userPhone={userPhone} userId={userId} />}
       {tab==='more'    && <MoreScreen    loggedIn={loggedIn} userName={userName} userEmail={userEmail} emailVerified={emailVerified} onLogin={()=>go('login')} onBranches={()=>go('branches')} onProfile={()=>go('profile')} onLogout={handleLogout} onBookings={()=>go('myBookings')} onBalance={()=>go('balance')} onInvoices={()=>go('invoices')} onServices={()=>go('services')} onNotifications={()=>go('notifications')} onGuide={()=>go('guide')} onAbout={()=>go('about')} onContact={()=>go('contact')} onPrivacy={()=>go('privacy')} />}
       <BottomNav tab={tab} setTab={setTab} badge={cart.length} />
     </View>
@@ -637,7 +641,7 @@ function CartScreen({cart,remove,loggedIn,onLogin,clear}){
   );
 }
 
-function BookingScreen({loggedIn,onLogin,branches:propBranches}){
+function BookingScreen({loggedIn,onLogin,branches:propBranches,userName,userPhone,userId}){
   const BK_BR = (propBranches||BRANCHES_LIST).map(b=>b.name);
   const [nm,setNm]=useState('');
   const [ph,setPh]=useState('');
@@ -645,16 +649,22 @@ function BookingScreen({loggedIn,onLogin,branches:propBranches}){
   const [nt,setNt]=useState('');
   const [br,setBr]=useState(-1);
   const [of,setOf]=useState(-1);
+  useEffect(()=>{
+    if(loggedIn){
+      if(userName) setNm(userName);
+      if(userPhone) setPh(userPhone);
+    }
+  },[loggedIn,userName,userPhone]);
   const confirm=async()=>{
     if(!nm.trim()){webAlert('تنبيه','يرجى إدخال الاسم');return;}
     if(!ph.trim()){webAlert('تنبيه','يرجى إدخال رقم الهاتف');return;}
     if(br<0){webAlert('تنبيه','يرجى اختيار الفرع');return;}
     const brName = BK_BR[br] || BRANCH_NAMES[br] || '—';
-    const bookingData = { name:nm, phone:ph, idNum:id, note:nt, branch:brName, offer:OFFER_LIST[of]||'—' };
+    const bookingData = { name:nm, phone:ph, idNum:id, note:nt, branch:brName, offer:OFFER_LIST[of]||'—', userId };
     const result = await apiPost('/bookings', bookingData);
     const code = result?.booking?.code || ('BK-'+Math.floor(Math.random()*9000+1000));
     webAlert('تم الحجز بنجاح! 🎉',`رقم حجزك: ${code}\nالفرع: ${brName}\nسيتم التواصل معك للتأكيد.`,[
-      {text:'حسناً',onPress:()=>{setNm('');setPh('');setId('');setNt('');setBr(-1);setOf(-1);}},
+      {text:'حسناً',onPress:()=>{setNm(userName||'');setPh(userPhone||'');setId('');setNt('');setBr(-1);setOf(-1);}},
     ]);
   };
   return(

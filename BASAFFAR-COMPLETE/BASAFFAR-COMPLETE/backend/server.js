@@ -245,17 +245,22 @@ app.get('/api/bookings', requireAuth, (req, res) => {
   const db = readDB(); const { status } = req.query;
   let list = [...db.bookings].reverse();
   if (status) list = list.filter(b => b.status === status);
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
+    list = list.filter(b => b.userId === req.user.id);
+  }
   res.json(list);
 });
 app.post('/api/bookings', requireAuth, (req, res) => {
   const db = readDB(); const id = nextId(db, 'bookings');
   const code = 'BK-' + String(3000 + id).padStart(4, '0');
-  const booking = { ...req.body, id, code, status: 'pending', date: new Date().toISOString().slice(0, 10), createdAt: new Date().toISOString() };
+  const booking = { ...req.body, id, code, status: 'pending', userId: req.user.id, date: new Date().toISOString().slice(0, 10), createdAt: new Date().toISOString() };
   db.bookings.push(booking);
-  if (req.body.phone) {
-    const ex = db.clients.find(c => c.phone === req.body.phone);
-    if (ex) { ex.bookings = (ex.bookings || 0) + 1; }
-    else db.clients.push({ id: nextId(db, 'clients'), name: req.body.name, phone: req.body.phone, idNum: req.body.idNum, bookings: 1, joinedAt: new Date().toISOString() });
+  const ex = db.clients.find(c => c.id === req.user.id);
+  if (ex) {
+    ex.bookings = (ex.bookings || 0) + 1;
+  } else {
+    const dbUser = db.users.find(u => u.id === req.user.id);
+    db.clients.push({ id: req.user.id, name: req.body.name || (dbUser && dbUser.name) || '', email: (dbUser && dbUser.email) || null, phone: req.body.phone || (dbUser && dbUser.phone) || '', idNum: req.body.idNum || (dbUser && dbUser.idNum) || null, bookings: 1, joinedAt: (dbUser && dbUser.createdAt) || new Date().toISOString() });
   }
   writeDB(db); res.json({ ok: true, booking });
 });

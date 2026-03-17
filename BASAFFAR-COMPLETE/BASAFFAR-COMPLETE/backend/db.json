@@ -312,14 +312,6 @@
   "clients": [
     {
       "id": 1,
-      "name": "Mohamed",
-      "phone": "0572330922",
-      "idNum": "2542409848",
-      "bookings": 1,
-      "joinedAt": "2026-03-16T14:02:27.335Z"
-    },
-    {
-      "id": 1,
       "name": "Test User",
       "email": "test@example.com",
       "phone": "0501234567",
@@ -379,6 +371,7 @@
       "idNum": null,
       "nationality": null,
       "passwordHash": "$2b$12$aVUg/G2Ng2GxSmDoeBsaJOoJfYaQVGpFbbh4/3cHOfBSfqqlxjcbq",
+      "role": "user",
       "emailVerified": false,
       "verifyToken": "35845fbbbf03d5e0d813b647986002d4c50041299c3fcfa42c06a7256922d940",
       "verifyExpires": 1773791821031,
@@ -416,7 +409,7 @@
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0",
       "ip": "127.0.0.1",
       "createdAt": "2026-03-17T10:27:19.877Z",
-      "lastUsedAt": "2026-03-17T10:42:47.074Z",
+      "lastUsedAt": "2026-03-17T11:00:57.031Z",
       "expiresAt": "2026-03-24T10:27:19.877Z",
       "revoked": false
     }
