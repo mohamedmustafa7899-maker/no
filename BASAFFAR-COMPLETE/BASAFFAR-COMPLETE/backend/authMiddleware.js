@@ -22,7 +22,8 @@ const ACCESS_EXPIRES    = '15m';
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 
 // ─── Cookie options ───────────────────────────────────────────────────────────
-const COOKIE_BASE = { httpOnly: true, secure: IS_PROD, sameSite: IS_PROD ? 'strict' : 'lax' };
+const IS_HTTPS = IS_PROD || !!process.env.REPLIT_DOMAINS; // Replit always uses HTTPS
+const COOKIE_BASE = { httpOnly: true, secure: IS_HTTPS, sameSite: 'lax' };
 const ACCESS_COOKIE_OPTS  = { ...COOKIE_BASE, path: '/', maxAge: 15 * 60 * 1000 };
 const REFRESH_COOKIE_OPTS = { ...COOKIE_BASE, path: '/api/auth', maxAge: REFRESH_EXPIRES_MS };
 

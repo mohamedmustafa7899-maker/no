@@ -41,32 +41,25 @@ mobile-app/                        # Vite + React Native Web project (port 5000)
 
 ## Security Architecture (Production-Grade)
 
-### Replit Auth (Social Login)
+### Authentication — Replit Auth (Single Method)
 - **File**: `BASAFFAR-COMPLETE/BASAFFAR-COMPLETE/backend/replitAuth.js`
-- Supports login via Google, GitHub, Apple, X, and email/password through Replit's OpenID Connect provider
+- **Single login method**: Replit OpenID Connect (supports Google, GitHub, Apple, X, email/password)
 - Uses PKCE flow (secure OAuth 2.0 with code verifier/challenge)
+- Domain resolved from `REPLIT_DOMAINS` env var (safe against host-header injection)
 - After callback: upserts user in `db.json` and issues standard JWT cookies — all existing protected routes work unchanged
 - Sessions stored in `db.sessions[]` with `via: 'replit_auth'` marker
-- Hostname resolved from `APP_URL` env var (safe against host-header injection)
 - Routes: `GET /api/replit-login`, `GET /api/replit-callback`, `GET /api/replit-logout`
-- Frontend: "تسجيل الدخول بـ Replit" button in LoginScreen → `window.location.href = '/api/replit-login'`
+- Frontend: single "تسجيل الدخول" button in LoginScreen → redirects to Replit OAuth
 - Packages: `openid-client`, `express-session` (installed in root node_modules)
 
-### Authentication Flow
+### JWT Cookie Flow (Post-Login)
 - **httpOnly cookies** — no localStorage: `access_token` (15min, path `/`) + `refresh_token` (7d, path `/api/auth`)
-- **Auto-refresh**: frontend `apiRequest()` detects 401, silently calls `POST /api/auth/refresh`, retries original request (deduped via `_refreshing` promise)
-- **Session table** in db.json: each login creates a session with hashed refresh token, IP, user-agent, expiry, revoked flag
-- Cookies are `secure: true` + `sameSite: 'strict'` in production; lax in development
+- **Auto-refresh**: frontend `apiRequest()` detects 401, silently calls `POST /api/auth/refresh`, retries original request
+- Cookies: `secure: true` + `sameSite: 'lax'` on Replit/production (HTTPS detected via `REPLIT_DOMAINS`)
 
-### CAPTCHA
-- `GET /api/auth/captcha` → server-side math challenge `{id, question}` (e.g. "كم يساوي 3 + 7؟")
-- CAPTCHA store is in-memory with 5-minute TTL and single-use (deleted on validation)
-- Required on login, register, forgot-password — **skipped in development** (`IS_PROD` guard)
-- Frontend: `CaptchaField` component with refresh button; auto-refreshes on wrong answer
-
-### Account Lockout
-- 5 failed logins → 15-minute lockout stored on user record (`failedAttempts`, `lockUntil`)
-- Remaining attempts shown per failed attempt; lock duration shown when locked
+### CORS
+- ALLOWED_ORIGINS includes `https://${REPLIT_DOMAINS}` automatically + localhost for local dev
+- `credentials: true` for cookie-based auth
 
 ### Roles & RBAC
 - Roles: `user`, `admin`, `super_admin` stored in JWT payload + user record

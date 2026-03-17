@@ -25,9 +25,12 @@ if (!process.env.JWT_REFRESH_SECRET) console.warn('[WARN] JWT_REFRESH_SECRET not
 if (!process.env.APP_URL)            console.warn('[WARN] APP_URL not set — email links will point to localhost:3000');
 
 // ─── CORS — credentials + specific origins ───────────────────────────────────
-const ALLOWED_ORIGINS = IS_PROD
-  ? [process.env.APP_URL, process.env.ADMIN_URL].filter(Boolean)
-  : ['http://localhost:5000', 'http://localhost:3000'];
+const ALLOWED_ORIGINS = [
+  'http://localhost:5000',
+  'http://localhost:3000',
+  ...(IS_PROD ? [process.env.APP_URL, process.env.ADMIN_URL] : []),
+  ...(process.env.REPLIT_DOMAINS ? [`https://${process.env.REPLIT_DOMAINS}`] : []),
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, cb) => {

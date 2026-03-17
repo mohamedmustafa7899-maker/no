@@ -35,12 +35,13 @@ async function loadOidc() {
   _config = await oidc.discovery(new URL(issuerUrl), replId);
 }
 
-// ─── Determine the canonical app hostname (safe against host-header abuse) ───
-function getHostname(req) {
+// ─── Determine the canonical app domain (safe against host-header abuse) ─────
+function getAppDomain() {
+  if (process.env.REPLIT_DOMAINS) return process.env.REPLIT_DOMAINS;
   if (process.env.APP_URL) {
     try { return new URL(process.env.APP_URL).hostname; } catch {}
   }
-  return req.hostname;
+  return 'localhost:5000';
 }
 
 // ─── Upsert a Replit user in db.json and return the user record ───────────────
@@ -125,7 +126,8 @@ async function setupReplitAuth(app) {
     name:              'replit_oauth_sid',
     cookie: {
       httpOnly: true,
-      secure:   process.env.NODE_ENV === 'production',
+      secure:   true, // Replit always uses HTTPS
+      sameSite: 'lax',
       maxAge:   10 * 60 * 1000, // 10 min — only needed for the OAuth dance
     },
   });
@@ -133,8 +135,8 @@ async function setupReplitAuth(app) {
   // ── Login — redirect to Replit OAuth ────────────────────────────────────────
   app.get('/api/replit-login', sessionMiddleware, async (req, res) => {
     try {
-      const hostname    = getHostname(req);
-      const callbackURL = `https://${hostname}/api/replit-callback`;
+      const domain      = getAppDomain();
+      const callbackURL = `https://${domain}/api/replit-callback`;
       const codeVerifier    = _oidc.randomPKCECodeVerifier();
       const codeChallenge   = await _oidc.calculatePKCECodeChallenge(codeVerifier);
       const state           = _oidc.randomState();
@@ -197,7 +199,7 @@ async function setupReplitAuth(app) {
     try {
       const endUrl = _oidc.buildEndSessionUrl(_config, {
         client_id:                process.env.REPL_ID,
-        post_logout_redirect_uri: `https://${getHostname(req)}`,
+        post_logout_redirect_uri: `https://${getAppDomain()}`,
       }).href;
       res.redirect(endUrl);
     } catch {

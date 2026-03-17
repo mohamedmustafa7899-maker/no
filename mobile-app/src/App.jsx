@@ -214,9 +214,7 @@ export default function App() {
   if (screen==='splash') return <Splash onDone={()=>go('tabs')} />;
   if (screen==='offerDetail') return <OfferDetail offer={param} onBack={()=>go('tabs')} onAdd={(o,q,b)=>{addToCart(o,q,b);goTab('cart');}} />;
   if (screen==='doctorDetail') return <DoctorDetail doctor={param} onBack={()=>go('tabs')} onBook={()=>goTab('booking')} />;
-  if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} onLogin={(user)=>{handleLogin(user);go('tabs');}} onRegister={()=>go('register')} onForgot={()=>go('forgotPassword')} />;
-  if (screen==='register') return <RegisterScreen onBack={()=>go('login')} onDone={(user)=>{handleLogin(user);go('tabs');}} />;
-  if (screen==='forgotPassword') return <ForgotPasswordScreen onBack={()=>go('login')} />;
+  if (screen==='login') return <LoginScreen onBack={()=>go('tabs')} />;
   if (screen==='allDoctors') return <AllDoctorsScreen onBack={()=>go('tabs')} onDoctor={d=>go('doctorDetail',d)} doctors={apiDoctors} />;
   if (screen==='branches') return <BranchesScreen onBack={()=>go('tabs')} branches={apiBranches} />;
   if (screen==='profile') return <ProfileScreen onBack={()=>go('tabs')} userName={userName} userEmail={userEmail} emailVerified={emailVerified} onVerifiedUpdate={()=>setEmailVerified(true)} />;
@@ -898,87 +896,38 @@ function CaptchaField({captcha,onRefresh,value,onChange}){
   );
 }
 
-function LoginScreen({onBack,onLogin,onRegister,onForgot}){
-  const [em,setEm]=useState('');
-  const [pw,setPw]=useState('');
-  const [loading,setLoading]=useState(false);
-  const [err,setErr]=useState('');
-  const [showPw,setShowPw]=useState(false);
-  const [captcha,setCaptcha]=useState(null);
-  const [captchaAns,setCaptchaAns]=useState('');
-
-  useEffect(()=>{ loadCaptcha(); },[]);
-  const loadCaptcha=async()=>{ setCaptchaAns(''); const c=await fetchCaptcha(); setCaptcha(c); };
-
-  const login=async()=>{
-    setErr('');
-    if(!em.trim()){setErr('يرجى إدخال البريد الإلكتروني');return;}
-    if(!pw.trim()){setErr('يرجى إدخال كلمة المرور');return;}
-    setLoading(true);
-    const res = await apiPost('/auth/login', { email:em.trim(), password:pw, captchaId:captcha?.id, captchaAnswer:captchaAns });
-    setLoading(false);
-    if (res?.ok) {
-      onLogin(res.user);
-    } else {
-      setErr(res?.msg || 'حدث خطأ، حاول مرة أخرى');
-      if(res?.msg?.includes('التحقق')) loadCaptcha();
-    }
-  };
+function LoginScreen({onBack}){
   return(
     <SafeAreaView style={{flex:1,backgroundColor:C.bg}}>
       <BB title="تسجيل الدخول" onBack={onBack}/>
-      <ScrollView contentContainerStyle={{padding:24,alignItems:'center'}} keyboardShouldPersistTaps="handled">
-        <LinearGradient colors={['#0A1628','#0F2347']} style={{width:80,height:80,borderRadius:22,alignItems:'center',justifyContent:'center',marginBottom:16,gap:5,borderWidth:2,borderColor:'rgba(36,99,235,0.4)'}}>
-          <View style={{width:52,height:3,backgroundColor:C.blue,borderRadius:2}}/>
-          <Text style={{fontSize:10,fontWeight:'900',color:'white',letterSpacing:1}}>DR BASAFFAR</Text>
+      <View style={{flex:1,justifyContent:'center',alignItems:'center',padding:32}}>
+        <LinearGradient colors={['#0A1628','#0F2347']} style={{width:100,height:100,borderRadius:28,alignItems:'center',justifyContent:'center',marginBottom:24,gap:6,borderWidth:2,borderColor:'rgba(36,99,235,0.4)'}}>
+          <View style={{width:60,height:3.5,backgroundColor:C.blue,borderRadius:2}}/>
+          <Text style={{fontSize:12,fontWeight:'900',color:'white',letterSpacing:1.5}}>DR BASAFFAR</Text>
         </LinearGradient>
-        <Text style={{fontSize:20,fontWeight:'700',color:C.navy,marginBottom:4}}>مرحباً بك 👋</Text>
-        <Text style={{fontSize:12,color:C.txtL,marginBottom:28}}>سجّل دخولك للمتابعة</Text>
 
-        {err ? <View style={{width:'100%',backgroundColor:C.redL,borderRadius:10,padding:10,marginBottom:12}}><Text style={{fontSize:12,color:C.red,textAlign:'right'}}>{err}</Text></View> : null}
+        <Text style={{fontSize:24,fontWeight:'800',color:C.navy,marginBottom:6}}>مرحباً بك</Text>
+        <Text style={{fontSize:13,color:C.txtL,marginBottom:8,textAlign:'center',lineHeight:20}}>
+          سجّل دخولك للوصول إلى حسابك ومتابعة حجوزاتك
+        </Text>
+        <Text style={{fontSize:11,color:C.txtL,marginBottom:36,textAlign:'center'}}>
+          يمكنك الدخول بحساب Google أو GitHub أو Apple أو البريد الإلكتروني
+        </Text>
 
-        <View style={{width:'100%',marginBottom:12}}>
-          <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>البريد الإلكتروني</Text>
-          <TextInput style={{width:'100%',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,padding:12,fontSize:13,color:C.txt}} placeholder="أدخل بريدك الإلكتروني" value={em} onChangeText={v=>{setEm(v);setErr('');}} keyboardType="email-address" textAlign="right" placeholderTextColor={C.txtL} autoCapitalize="none"/>
-        </View>
-        <View style={{width:'100%',marginBottom:6}}>
-          <Text style={{fontSize:11,fontWeight:'700',color:C.txtM,marginBottom:5,textAlign:'right'}}>كلمة المرور</Text>
-          <View style={{flexDirection:'row',alignItems:'center',backgroundColor:C.white,borderWidth:1,borderColor:C.bgD,borderRadius:12,paddingHorizontal:12}}>
-            <TouchableOpacity onPress={()=>setShowPw(p=>!p)} style={{padding:4}}>
-              <Text style={{fontSize:16,color:C.txtL}}>{showPw?'🙈':'👁️'}</Text>
-            </TouchableOpacity>
-            <TextInput style={{flex:1,padding:12,fontSize:13,color:C.txt}} placeholder="أدخل كلمة المرور" value={pw} onChangeText={v=>{setPw(v);setErr('');}} secureTextEntry={!showPw} textAlign="right" placeholderTextColor={C.txtL}/>
-          </View>
-        </View>
-        <TouchableOpacity style={{alignSelf:'flex-start',marginBottom:20}} onPress={onForgot}>
-          <Text style={{fontSize:11,color:C.blue,fontWeight:'600'}}>نسيت كلمة المرور؟</Text>
-        </TouchableOpacity>
-
-        <CaptchaField captcha={captcha} onRefresh={loadCaptcha} value={captchaAns} onChange={v=>{setCaptchaAns(v);setErr('');}}/>
-
-        <TouchableOpacity style={{width:'100%'}} onPress={login} activeOpacity={0.85} disabled={loading}>
-          <LinearGradient colors={loading?['#6B86AA','#4A6090']:[C.blue,C.blueD]} style={{borderRadius:14,padding:14,alignItems:'center',width:'100%'}}>
-            <Text style={{fontSize:15,fontWeight:'700',color:'white'}}>{loading?'جارٍ التحقق...':'تسجيل الدخول'}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        <View style={{width:'100%',flexDirection:'row',alignItems:'center',marginTop:20,marginBottom:4}}>
-          <View style={{flex:1,height:1,backgroundColor:C.bgD}}/>
-          <Text style={{marginHorizontal:10,fontSize:11,color:C.txtL}}>أو</Text>
-          <View style={{flex:1,height:1,backgroundColor:C.bgD}}/>
-        </View>
         <TouchableOpacity
-          style={{width:'100%',flexDirection:'row',alignItems:'center',justifyContent:'center',backgroundColor:'#1C2333',borderRadius:14,padding:13,marginBottom:8,borderWidth:1,borderColor:'rgba(255,255,255,0.12)',gap:8}}
+          style={{width:'100%',maxWidth:320}}
           onPress={()=>{ if(typeof window!=='undefined') window.location.href='/api/replit-login'; }}
           activeOpacity={0.85}
         >
-          <Text style={{fontSize:18}}>🔷</Text>
-          <Text style={{fontSize:14,fontWeight:'700',color:'white'}}>تسجيل الدخول بـ Replit</Text>
+          <LinearGradient colors={[C.blue,C.blueD]} style={{borderRadius:16,padding:16,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10}}>
+            <Text style={{fontSize:17,fontWeight:'800',color:'white'}}>تسجيل الدخول</Text>
+          </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onRegister} style={{marginTop:12}}>
-          <Text style={{fontSize:12,color:C.txtL}}>ليس لديك حساب؟ <Text style={{color:C.blue,fontWeight:'700'}}>أنشئ حساباً</Text></Text>
-        </TouchableOpacity>
-        <View style={{height:30}}/>
-      </ScrollView>
+
+        <Text style={{fontSize:10,color:C.txtL,marginTop:24,textAlign:'center',lineHeight:16}}>
+          بالمتابعة، أنت توافق على سياسة الخصوصية وشروط الاستخدام
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }
