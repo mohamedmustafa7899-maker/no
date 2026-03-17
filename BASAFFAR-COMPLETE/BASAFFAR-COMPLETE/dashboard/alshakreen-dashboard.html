@@ -511,7 +511,6 @@ tr:hover td{background:rgba(240,246,255,.6)}
         <span id="bn-prev-ph" style="font-size:40px;opacity:.25">🖼️</span>
       </div>
       <div class="fg">
-        <div class="fw fc"><div class="fl">اسم البنر (للتعرف عليه في لوحة التحكم)</div><input class="fi" id="bn-name" placeholder="مثال: بنر رمضان"></div>
         <div class="fw fc"><div class="fl">صورة البنر *</div>
           <div class="upload-zone"><input type="file" accept="image/*" onchange="previewBannerFile(this)"><div class="uz-ico">📤</div><div class="uz-lbl">رفع صورة البنر</div><div class="uz-sub">JPG PNG · العرض المثالي: 900×320px</div></div>
         </div>
@@ -650,6 +649,11 @@ function openModal(id, title, isEdit, data) {
   const t = document.getElementById(id+'-title');
   if (t) t.textContent = title;
   _editIds[id] = null;
+  if (!isEdit) {
+    if (id==='m-banner') { _bannerImg=''; const i=document.getElementById('bn-prev-img'),p=document.getElementById('bn-prev-ph'); if(i){i.src='';i.style.display='none';} if(p)p.style.display=''; }
+    if (id==='m-doctor') { _doctorImg=''; const i=document.getElementById('dr-prev-img'),e=document.getElementById('dr-prev-emoji'); if(i){i.src='';i.style.display='none';} if(e)e.style.display=''; }
+    if (id==='m-offer')  { _offerImg='';  const i=document.getElementById('of-prev-img'),c=document.getElementById('of-prev-icon');  if(i){i.src='';i.style.display='none';} if(c)c.style.display=''; }
+  }
   if (isEdit && data) {
     _editIds[id] = data.id;
     if (id === 'm-offer') {
@@ -688,7 +692,6 @@ function openModal(id, title, isEdit, data) {
       }
     }
     if (id === 'm-banner') {
-      document.getElementById('bn-name').value = data.name || data.title || '';
       _bannerImg = data.image || '';
       const bnImg = document.getElementById('bn-prev-img');
       const bnPh  = document.getElementById('bn-prev-ph');
@@ -818,19 +821,18 @@ async function saveDept() {
 }
 
 async function saveBanner() {
-  const name = document.getElementById('bn-name').value.trim() || ('بنر '+Date.now()).slice(-8);
   if (!_bannerImg) { toast('⚠️ يرجى رفع صورة البنر'); return; }
   const editId = _editIds['m-banner'];
+  const autoName = editId ? undefined : ('بنر-'+(Date.now()+'').slice(-6));
   if (editId) {
-    await PUT('/banners/'+editId, { name, image:_bannerImg, active:true });
+    await PUT('/banners/'+editId, { image:_bannerImg, active:true });
     toast('✓ تم تحديث البنر');
   } else {
-    await POST('/banners', { name, image:_bannerImg, active:true, order:99 });
+    await POST('/banners', { name:autoName, image:_bannerImg, active:true, order:99 });
     toast('✓ تمت إضافة البنر');
   }
   _bannerImg = '';
   closeModal('m-banner');
-  clearForm(['bn-name']);
   const bnImg = document.getElementById('bn-prev-img');
   if (bnImg) { bnImg.src=''; bnImg.style.display='none'; }
   const bnPh = document.getElementById('bn-prev-ph');
