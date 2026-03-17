@@ -662,6 +662,7 @@ function BookingScreen({loggedIn,onLogin,branches:propBranches,userName,userPhon
     const brName = BK_BR[br] || BRANCH_NAMES[br] || '—';
     const bookingData = { name:nm, phone:ph, idNum:id, note:nt, branch:brName, offer:OFFER_LIST[of]||'—', userId };
     const result = await apiPost('/bookings', bookingData);
+    if(!result?.ok){webAlert('خطأ','تعذّر إرسال الحجز، يرجى المحاولة مرة أخرى.');return;}
     const code = result?.booking?.code || ('BK-'+Math.floor(Math.random()*9000+1000));
     webAlert('تم الحجز بنجاح! 🎉',`رقم حجزك: ${code}\nالفرع: ${brName}\nسيتم التواصل معك للتأكيد.`,[
       {text:'حسناً',onPress:()=>{setNm(userName||'');setPh(userPhone||'');setId('');setNt('');setBr(-1);setOf(-1);}},
