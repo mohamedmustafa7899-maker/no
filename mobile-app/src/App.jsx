@@ -34,10 +34,15 @@ async function _makeRequest(method, path, body) {
   return fetch(API_URL + path, opts);
 }
 
+// Auth form endpoints that should never trigger silent token-refresh on 401
+// (their 401 = legitimate rejection, e.g. wrong password — must reach the caller)
+const NO_REFRESH_PATHS = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/change-password', '/auth/resend-verification'];
+
 async function apiRequest(method, path, body) {
   try {
     let res = await _makeRequest(method, path, body);
-    if (res.status === 401) {
+    const skipRefresh = NO_REFRESH_PATHS.some(p => path.endsWith(p));
+    if (res.status === 401 && !skipRefresh) {
       // Try refreshing the access token once
       if (!_refreshing) {
         _refreshing = fetch(API_URL + '/auth/refresh', { method: 'POST', credentials: 'include' })
